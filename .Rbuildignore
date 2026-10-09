@@ -1,0 +1,10 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^app\.R$
+^README\.md$
+^data-raw$
+^.*\.duckdb.*$
+^.*\.sqlite$
+^manifest\.json$
+^rsconnect$
+^docs$

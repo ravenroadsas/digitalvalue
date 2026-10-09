@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+*.duckdb
+*.duckdb.wal
+*.sqlite
+rsconnect/
+*.Rcheck/
+*.tar.gz

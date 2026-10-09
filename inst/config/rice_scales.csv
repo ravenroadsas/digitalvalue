@@ -1,0 +1,15 @@
+dimension,level,ordinal,value,description
+impact,XS,1,0.25,Minimal impact
+impact,S,2,0.5,Low impact
+impact,M,3,1,Medium impact
+impact,L,4,2,High impact
+impact,XL,5,3,Massive impact
+confidence,Moonshot,1,0.2,Idea stage - little evidence
+confidence,Low,2,0.5,Some evidence or analogues
+confidence,High,3,0.8,Solid data or pilot results
+confidence,Certain,4,1,Proven - deterministic outcome
+effort,XS,1,0.5,Days of work
+effort,S,2,1,Up to 1 person-month
+effort,M,3,2,1-3 person-months
+effort,L,4,4,3-6 person-months
+effort,XL,5,8,More than 6 person-months

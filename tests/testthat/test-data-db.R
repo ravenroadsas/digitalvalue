@@ -1,0 +1,101 @@
+test_that("schema is created idempotently", {
+  con <- test_con()
+  db_init(con)
+  expect_true(all(names(digitalvalue:::db_schema) %in% DBI::dbListTables(con)))
+})
+
+test_that("initiatives CRUD and status history", {
+  con <- test_con()
+  id <- db_add_initiative(con, "Test", "desc", "me", "BU", 1.5, user = "u1")
+  expect_equal(id, "DV-0001")
+  expect_equal(db_next_initiative_id(con), "DV-0002")
+  expect_error(db_add_initiative(con, "  "), "required")
+  db_update_initiative(con, id, list(name = "Renamed", cost_mm_usd = 2, status = "hack"))
+  i <- db_get_initiatives(con, id)
+  expect_equal(i$name, "Renamed")
+  expect_equal(i$cost_mm_usd, 2)
+  expect_equal(i$status, "Phase I")
+  expect_true(db_set_status(con, id, "Rejected", "u1", "no"))
+  expect_false(db_set_status(con, id, "Rejected", "u1"))
+  h <- db_get_status_history(con)
+  expect_equal(h$to_status, c("Phase I", "Rejected"))
+  expect_error(db_set_status(con, "DV-9999", "Ready"), "Unknown")
+})
+
+test_that("RICE upsert, PRMT lines, reviews and audits roundtrip", {
+  cfg <- test_cfg()
+  con <- test_con()
+  id <- db_add_initiative(con, "X", cost_mm_usd = 0.5)
+  db_save_rice(con, id, rice_assess(100, "M", "Low", "S", cfg))
+  db_save_rice(con, id, rice_assess(1000, "L", "High", "M", cfg))
+  rc <- db_get_rice(con)
+  expect_equal(nrow(rc), 1)
+  expect_equal(rc$score, 2.4)
+
+  calc <- prmt_calculate("p_jobs_success", list(), cfg)
+  lid <- db_add_prmt_line(con, id, calc, "plan", "workovers")
+  db_add_prmt_line(con, id, prmt_calculate("m_direct", list(mm_usd = 1), cfg), "actual")
+  l <- db_get_prmt_lines(con, id, "plan")
+  expect_equal(nrow(l), 1)
+  expect_equal(jsonlite::fromJSON(l$params_json)$n_jobs, 10)
+  expect_equal(l$comment, "workovers")
+  expect_equal(nrow(db_get_prmt_lines(con)), 2)
+
+  db_add_review(con, id, "Approve", 0.3, 0.5, "ok", "planner")
+  expect_error(db_add_review(con, id, "Maybe"))
+  expect_equal(db_get_reviews(con, id)$decision, "Approve")
+
+  db_add_audit(con, id, 0.5, 0.4, "fine", "planner")
+  expect_equal(db_get_audits(con)$realization_pct, 80)
+
+  pf <- db_portfolio(con)
+  expect_equal(pf$plan_p, 30)
+  expect_equal(pf$actual_m, 1)
+  expect_equal(pf$plan_lines, 1)
+  expect_equal(pf$review_decision, "Approve")
+  expect_equal(pf$audited_value_mm_usd, 0.4)
+
+  db_delete_prmt_line(con, lid)
+  expect_equal(nrow(db_get_prmt_lines(con, id, "plan")), 0)
+})
+
+test_that("latest review wins in the portfolio view", {
+  con <- test_con()
+  id <- db_add_initiative(con, "X")
+  db_add_review(con, id, "Rework", time = Sys.time() - 100)
+  db_add_review(con, id, "Approve", time = Sys.time())
+  expect_equal(db_portfolio(con)$review_decision, "Approve")
+})
+
+test_that("event log append and read", {
+  con <- test_con()
+  ev <- normalize_raw_batch('[{"ts":"2026-01-01T10:00:00.000Z","name":"nav","value":"phase1"}]',
+                            "s1", "u1", "DV-0001")
+  expect_equal(db_log_events(con, ev), 1)
+  expect_equal(db_log_events(con, NULL), 0L)
+  e <- db_get_events(con)
+  expect_equal(e$ts, "2026-01-01 10:00:00")
+  expect_equal(nrow(db_get_events(con, since = "2026-01-02")), 0)
+})
+
+test_that("sync_status derives statuses after assessments", {
+  cfg <- test_cfg()
+  con <- test_con()
+  id <- db_add_initiative(con, "X", cost_mm_usd = 3)
+  db_save_rice(con, id, rice_assess(1000, "L", "High", "L", cfg))
+  expect_equal(sync_status(con, cfg), id)
+  expect_equal(db_get_initiatives(con, id)$status, "Phase II")
+  db_add_prmt_line(con, id, prmt_calculate("m_direct", list(mm_usd = 1), cfg))
+  sync_status(con, cfg)
+  expect_equal(db_get_initiatives(con, id)$status, "Phase III")
+  db_add_review(con, id, "Approve")
+  sync_status(con, cfg)
+  expect_equal(db_get_initiatives(con, id)$status, "Ready")
+  expect_length(sync_status(con, cfg), 0)
+})
+
+test_that("sql_params rewrites placeholders for PostgreSQL only", {
+  pg <- structure(list(), class = "PqConnection")
+  expect_equal(digitalvalue:::sql_params(pg, "a = ? AND b = ?"), "a = $1 AND b = $2")
+  expect_equal(digitalvalue:::sql_params(list(), "a = ?"), "a = ?")
+})

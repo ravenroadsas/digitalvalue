@@ -1,0 +1,14 @@
+key,value,unit,group,description
+netback_usd_bbl,35,USD/bbl,PRMT valuation,Net back per barrel used to monetise production
+days_per_year,365,days,PRMT valuation,Days used to annualise BOPD into barrels
+reserve_value_1P,10,USD/bbl,PRMT valuation,Value per barrel of 1P (proved) reserves
+reserve_value_2P,6,USD/bbl,PRMT valuation,Value per barrel of 2P (proved + probable) reserves
+reserve_value_3P,3,USD/bbl,PRMT valuation,Value per barrel of 3P (proved + probable + possible) reserves
+reserve_value_contingent,1,USD/bbl,PRMT valuation,Value per barrel of contingent resources
+avg_salary_usd_year,95000,USD/year,PRMT valuation,Average loaded salary per employee
+work_hours_year,1800,h/year,PRMT valuation,Working hours per employee per year
+time_productivity_coef,3,x,PRMT valuation,Value generated per salary dollar when saved time is redeployed to productive tasks
+gate2_effort_min,L,t-shirt,Gates,Phase II (monetary) required when effort is at least this size
+gate2_score_min,3,score,Gates,Phase II (monetary) required when RICE score is at least this value
+gate3_value_min_mm_usd,5,mm USD,Gates,Phase III (planning review) required when monetary value is at least this
+gate3_cost_min_mm_usd,1,mm USD,Gates,Phase III (planning review) required when implementation cost is at least this

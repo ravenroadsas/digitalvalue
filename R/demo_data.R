@@ -1,0 +1,132 @@
+#' Seed demonstration data
+#'
+#' Populates an empty database with a realistic portfolio covering every stage
+#' of the process (assessment, prioritised, in execution, audited, rejected).
+#' @param con A DBI connection (schema initialised).
+#' @param cfg Configuration list.
+#' @return Invisibly, the ids created.
+#' @export
+seed_demo_data <- function(con, cfg) {
+  if (nrow(db_get_initiatives(con))) return(invisible(character(0)))
+  t0 <- Sys.time() - 120 * 86400
+  at <- function(days) t0 + days * 86400
+  demo <- list(
+    list(name = "Workover candidate selection with ML", bu = "Production", owner = "Ana Ruiz",
+         desc = "Ranks workover candidates using production history and logs to increase job success rate.",
+         cost = 1.1, rice = list(400, "XL", "High", "M", "Two pilots in field A."),
+         plan = list(list("p_jobs_success", list(n_jobs = 10, bopd_per_job = 30, success_before = 60, success_after = 70),
+                          "10 workovers/yr, each 30 BOPD; ML lifts success from 60% to 70%.")),
+         review = "Approve", final = "In execution"),
+    list(name = "Digital twin - gas compression", bu = "Facilities", owner = "Luis Mendez",
+         desc = "Real-time model of the compression train to cut unplanned downtime.",
+         cost = 2.4, rice = list(150, "XL", "High", "XL", "Vendor benchmark data."),
+         plan = list(list("p_uptime", list(base_bopd = 18000, uptime_before = 93, uptime_after = 95),
+                          "Uptime of compression-constrained production improves by 2 pts.")),
+         review = "Approve", final = "Prioritized"),
+    list(name = "Automated daily production report", bu = "Production", owner = "Marta Gil",
+         desc = "Replaces manual spreadsheet consolidation of daily production.",
+         cost = 0.1, rice = list(250, "M", "Certain", "S", "Manual process timed: 25 min/day/engineer."),
+         plan = list(list("t_users", list(n_users = 60, hours_week = 2, weeks_year = 46),
+                          "60 engineers save 2 h/week.")),
+         review = NULL, final = "Audited",
+         actual = list(list("t_users", list(n_users = 55, hours_week = 1.8, weeks_year = 46),
+                            "Measured after 6 months: 55 active users, 1.8 h/week."))),
+    list(name = "Waterflood optimisation advisor", bu = "Reservoir", owner = "Jorge Paz",
+         desc = "Optimises injection allocation with capacitance-resistance models.",
+         cost = 1.5, rice = list(80, "XL", "Low", "L", "Literature shows 0.5-1% RF uplift."),
+         plan = list(list("r_recovery", list(ooip_mmbbl = 300, rf_before = 28, rf_after = 28.5, category = "2P"),
+                          "0.5% RF uplift on the main waterflood."),
+                     list("p_decline", list(base_bopd = 9000, decline_before = 14, decline_after = 12),
+                          "Decline flattening in the first year.")),
+         review = NULL, final = NULL),
+    list(name = "Drilling NPT analytics", bu = "Drilling", owner = "Sofia Lara",
+         desc = "Identifies non-productive-time patterns across rigs.",
+         cost = 0.6, rice = list(120, "L", "High", "M", "NPT currently 18%."),
+         plan = list(list("m_cost_saving", list(events_per_year = 40, saving_kusd = 35),
+                          "40 NPT events/yr avoided, 35 kUSD each.")),
+         review = NULL, final = "Closed"),
+    list(name = "Chatbot for HSE procedures", bu = "HSE", owner = "Pedro Ortiz",
+         desc = "Conversational search over HSE procedures.",
+         cost = 0.15, rice = list(3000, "S", "High", "S", "Survey of 200 field staff."),
+         plan = NULL, review = NULL, final = "Prioritized"),
+    list(name = "Corrosion risk prediction", bu = "Integrity", owner = "Elena Rios",
+         desc = "Predicts pipeline corrosion hot spots to prevent failures.",
+         cost = 1.2, rice = list(60, "L", "Low", "L", "Inspection data incomplete."),
+         plan = list(list("m_risk_avoided", list(cost_mm_usd = 12, prob_before = 8, prob_after = 5),
+                          "Major leak cost 12 mm USD; probability 8% -> 5%.")),
+         review = NULL, final = NULL),
+    list(name = "Seismic interpretation copilot", bu = "Exploration", owner = "Diego Vega",
+         desc = "AI-assisted horizon and fault picking.",
+         cost = 3, rice = list(40, "XL", "Moonshot", "XL", "Early-stage technology."),
+         plan = list(list("r_direct", list(mmbbl = 2, category = "contingent"),
+                          "Faster screening of leads; contingent resources.")),
+         review = "Reject", final = NULL),
+    list(name = "Inventory optimisation (warehouse)", bu = "Supply chain", owner = "Laura Soto",
+         desc = "Reduces spare-parts stock with demand forecasting.",
+         cost = 0.4, rice = list(50, "M", "High", "L", NULL),
+         plan = NULL, review = NULL, final = NULL),
+    list(name = "Lab results digitalisation", bu = "Production", owner = "Ines Mora",
+         desc = "Lab results flow directly into the production database.",
+         cost = 0.05, rice = list(90, "S", "Certain", "XS", "Simple integration, vendor API available."),
+         plan = NULL, review = NULL, final = NULL),
+    list(name = "Mobile field data capture", bu = "Operations", owner = "Raul Cano",
+         desc = "Replaces paper field tickets with a mobile app.",
+         cost = NA, rice = NULL, plan = NULL, review = NULL, final = NULL)
+  )
+  ids <- character(0)
+  for (k in seq_along(demo)) {
+    d <- demo[[k]]
+    day <- 3 * k
+    id <- db_add_initiative(con, d$name, d$desc, d$owner, d$bu, d$cost,
+                            user = "demo", time = at(day))
+    ids <- c(ids, id)
+    if (!is.null(d$rice)) {
+      r <- d$rice
+      db_save_rice(con, id, rice_assess(r[[1]], r[[2]], r[[3]], r[[4]], cfg, r[[5]] %||% NA),
+                   user = "demo", time = at(day + 4))
+    }
+    for (l in d$plan) {
+      db_add_prmt_line(con, id, prmt_calculate(l[[1]], l[[2]], cfg), "plan",
+                       comment = l[[3]], user = "demo", time = at(day + 10))
+    }
+    sync_status_one(con, cfg, id, at(day + 10))
+    if (!is.null(d$review)) {
+      pf <- compute_portfolio(db_portfolio(con), cfg)
+      row <- pf[pf$id == id, ]
+      db_add_review(con, id, d$review, row$plan_value_mm_usd * 0.9, row$cost_mm_usd,
+                    comment = if (d$review == "Approve") "Value haircut 10% for execution risk."
+                              else "Technology not mature; revisit next year.",
+                    user = "planning", time = at(day + 18))
+      sync_status_one(con, cfg, id, at(day + 18))
+    }
+    path <- switch(d$final %||% "",
+      "Prioritized" = "Prioritized",
+      "In execution" = c("Prioritized", "In execution"),
+      "Closed" = c("Prioritized", "In execution", "Closed"),
+      "Audited" = c("Prioritized", "In execution", "Closed"),
+      character(0))
+    for (j in seq_along(path)) {
+      db_set_status(con, id, path[j], "demo", time = at(day + 20 + 15 * j))
+    }
+    if (identical(d$final, "Audited")) {
+      for (l in d$actual) {
+        db_add_prmt_line(con, id, prmt_calculate(l[[1]], l[[2]], cfg), "actual",
+                         comment = l[[3]], user = "planning", time = at(day + 80))
+      }
+      pf <- compute_portfolio(db_portfolio(con), cfg)
+      row <- pf[pf$id == id, ]
+      db_add_audit(con, id, row$planned_value_mm_usd, row$actual_value_mm_usd,
+                   "Adoption slightly below plan.", user = "planning", time = at(day + 81))
+      db_set_status(con, id, "Audited", "planning", time = at(day + 81))
+    }
+  }
+  invisible(ids)
+}
+
+sync_status_one <- function(con, cfg, id, time) {
+  pf <- compute_portfolio(db_portfolio(con), cfg)
+  row <- pf[pf$id == id, ]
+  if (row$derived_status != row$status) {
+    db_set_status(con, id, row$derived_status, "system", "Automatic (assessment gates)", time)
+  }
+}
