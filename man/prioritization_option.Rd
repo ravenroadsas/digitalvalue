@@ -4,16 +4,25 @@
 \alias{prioritization_option}
 \title{ECharts option of the prioritisation scatter}
 \usage{
-prioritization_option(pf, cfg, y = c("score", "value"), highlight = NULL)
+prioritization_option(
+  pf,
+  cfg,
+  y = c("score", "value", "estimate"),
+  highlight = NULL,
+  estimate = NULL
+)
 }
 \arguments{
 \item{pf}{Output of \code{\link[=compute_portfolio]{compute_portfolio()}}.}
 
 \item{cfg}{Configuration list.}
 
-\item{y}{\code{"score"} (RICE) or \code{"value"} (planned mm USD).}
+\item{y}{\code{"score"} (RICE), \code{"value"} (planned mm USD) or \code{"estimate"}
+(planned mm USD, or the value-model estimate when not yet valued).}
 
 \item{highlight}{Optional selected initiative id (drawn with a ring).}
+
+\item{estimate}{Value-model median per row of \code{pf} (used by \code{"estimate"}).}
 }
 \value{
 An ECharts option list.

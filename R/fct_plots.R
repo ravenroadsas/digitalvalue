@@ -39,26 +39,34 @@ group_colors <- function() {
 #' Data for the prioritisation scatter (value vs effort)
 #' @param pf Output of [compute_portfolio()].
 #' @param cfg Configuration list.
-#' @param y `"score"` (RICE) or `"value"` (planned mm USD).
-#' @return Data frame `id`, `name`, `status`, `group`, `effort`, `x`, `y`, `size`.
+#' @param y `"score"` (RICE), `"value"` (planned mm USD) or `"estimate"`
+#'   (planned mm USD, or the value-model estimate when not yet valued).
+#' @param estimate Value-model median per row of `pf` (used by `"estimate"`).
+#' @return Data frame `id`, `name`, `status`, `group`, `effort`, `x`, `y`,
+#'   `size`, `estimated`.
 #' @export
-prioritization_data <- function(pf, cfg, y = c("score", "value")) {
+prioritization_data <- function(pf, cfg, y = c("score", "value", "estimate"), estimate = NULL) {
   y <- match.arg(y)
   d <- pf[!is.na(pf$score), , drop = FALSE]
   if (!nrow(d)) {
     return(data.frame(id = character(0), name = character(0), status = character(0),
                       group = character(0), effort = character(0), x = numeric(0),
-                      y = numeric(0), size = numeric(0)))
+                      y = numeric(0), size = numeric(0), estimated = logical(0)))
   }
+  est <- if (is.null(estimate)) rep(NA_real_, nrow(pf)) else estimate
+  est <- est[!is.na(pf$score)]
   x <- rice_ordinal(d$effort, "effort", cfg)
   # deterministic jitter so initiatives with the same effort do not overlap
   k <- stats::ave(seq_along(x), x, FUN = seq_along)
   n <- stats::ave(seq_along(x), x, FUN = length)
   jitter <- ifelse(n > 1, ((k - 1) / pmax(n - 1, 1) - 0.5) * 0.5, 0)
+  valued <- !is.na(d$planned_value_mm_usd) & d$planned_value_mm_usd > 0
+  estimated <- y == "estimate" & !valued & !is.na(est)
+  yv <- switch(y, score = d$score, value = d$planned_value_mm_usd,
+               estimate = ifelse(estimated, est, d$planned_value_mm_usd))
   data.frame(id = d$id, name = d$name, status = d$status, group = plot_group(d$status),
-             effort = d$effort, x = x + jitter,
-             y = if (y == "score") d$score else d$planned_value_mm_usd,
-             size = d$reach_value, stringsAsFactors = FALSE)
+             effort = d$effort, x = x + jitter, y = yv,
+             size = d$reach_value, estimated = estimated, stringsAsFactors = FALSE)
 }
 
 js <- function(...) htmlwidgets::JS(paste0(...))
@@ -68,12 +76,14 @@ js <- function(...) htmlwidgets::JS(paste0(...))
 #' @param highlight Optional selected initiative id (drawn with a ring).
 #' @return An ECharts option list.
 #' @export
-prioritization_option <- function(pf, cfg, y = c("score", "value"), highlight = NULL) {
+prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), highlight = NULL,
+                                  estimate = NULL) {
   y <- match.arg(y)
-  d <- prioritization_data(pf, cfg, y)
+  d <- prioritization_data(pf, cfg, y, estimate)
   cols <- group_colors()
   lv <- rice_levels(cfg, "effort")
-  ylab <- if (y == "score") "RICE score" else "Value (mm USD)"
+  ylab <- switch(y, score = "RICE score", value = "Value (mm USD)",
+                 estimate = "Value / est. mm USD")
   series <- lapply(names(cols), function(g) {
     s <- d[d$group == g, , drop = FALSE]
     strong <- g %in% c("Prioritized", "In execution")
@@ -81,9 +91,12 @@ prioritization_option <- function(pf, cfg, y = c("score", "value"), highlight = 
       name = g, type = "scatter",
       data = lapply(seq_len(nrow(s)), function(i) list(
         value = c(s$x[i], s$y[i], s$size[i]), name = s$name[i], id = s$id[i],
-        effort = s$effort[i], status = s$status[i],
-        itemStyle = if (!is.null(highlight) && s$id[i] == highlight)
-          list(borderColor = "#111", borderWidth = 3) else NULL)),
+        effort = s$effort[i], status = s$status[i], estimated = s$estimated[i],
+        # hollow markers = value anticipated by the value model
+        itemStyle = c(
+          if (s$estimated[i]) list(color = "#ffffff", borderColor = unname(cols[g]), borderWidth = 2,
+                                   borderType = "dashed", opacity = 1),
+          if (!is.null(highlight) && s$id[i] == highlight) list(borderColor = "#111", borderWidth = 3)))),
       symbolSize = js("function (v) { return 8 + v[2] * 4; }"),
       itemStyle = list(color = unname(cols[g]), opacity = if (strong) 0.95 else 0.6,
                        borderColor = if (strong) "#0b2e1a" else "#ffffff",
@@ -116,7 +129,7 @@ prioritization_option <- function(pf, cfg, y = c("score", "value"), highlight = 
       "function (p) { if (!p.data || !p.data.id) return p.name;",
       " return '<b>' + p.data.id + ' \u00b7 ' + p.data.name + '</b><br/>' +",
       " 'Status: ' + p.data.status + '<br/>Effort: ' + p.data.effort + '<br/>",
-      ylab, ": ' + p.value[1].toFixed(2) + '<br/>Reach: 10^' + p.value[2].toFixed(1) + ' users'; }")),
+      ylab, ": ' + p.value[1].toFixed(2) + (p.data.estimated ? ' (model estimate)' : '') + '<br/>Reach: 10^' + p.value[2].toFixed(1) + ' users'; }")),
     xAxis = list(type = "value", name = "Effort", nameLocation = "middle", nameGap = 24,
                  min = 0, max = length(lv) + 1, interval = 1,
                  splitLine = list(show = FALSE),

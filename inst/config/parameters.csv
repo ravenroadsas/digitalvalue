@@ -12,3 +12,5 @@ gate2_effort_min,L,t-shirt,Gates,Phase II (monetary) required when effort is at 
 gate2_score_min,3,score,Gates,Phase II (monetary) required when RICE score is at least this value
 gate3_value_min_mm_usd,5,mm USD,Gates,Phase III (planning review) required when monetary value is at least this
 gate3_cost_min_mm_usd,1,mm USD,Gates,Phase III (planning review) required when implementation cost is at least this
+value_model_min_n,8,#,Value model,Valued initiatives needed for the multivariable regression (simple RICE-value model below this)
+value_model_interval,0.8,level,Value model,Prediction interval of the anticipated value (0.8 = P10-P90)

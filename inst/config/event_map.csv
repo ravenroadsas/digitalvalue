@@ -5,7 +5,7 @@ pattern,activity,process_phase
 ^nav:phase2$,Open PRMT valuation,3 Phase II - PRMT
 ^nav:phase3$,Open planning review,4 Phase III - Planning
 ^nav:audit$,Open execution & audit,5 Execution & audit
-^nav:(process|parameters)$,Administer,Administration
+^nav:(process|parameters|value_model)$,Administer,Administration
 ^sidebar-initiative$,Select initiative,Navigation
 ^sidebar-act_,Change workflow status,Workflow decision
 ^sidebar-comment$,Change workflow status,Workflow decision
@@ -24,3 +24,4 @@ pattern,activity,process_phase
 ^(overview|phase1|phase3|audit)-.*_rows_selected$,Select initiative,Navigation
 ^overview-,Review portfolio,Portfolio monitoring
 ^process-,Administer,Administration
+^value_model-,Administer,Administration

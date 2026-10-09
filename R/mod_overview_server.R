@@ -34,8 +34,10 @@ mod_overview_server <- function(id, state) {
     })
 
     output$scatter <- echarts4r::renderEcharts4r({
-      echart_from_option(prioritization_option(state$portfolio(), cfg, input$y_axis %||% "score",
-                                               highlight = state$selected()))
+      pf <- state$portfolio()
+      echart_from_option(prioritization_option(pf, cfg, input$y_axis %||% "score",
+                                               highlight = state$selected(),
+                                               estimate = portfolio_estimates(pf, state$value_model(), cfg)$median))
     })
     output$status <- echarts4r::renderEcharts4r({
       echart_from_option(status_option(state$portfolio()))

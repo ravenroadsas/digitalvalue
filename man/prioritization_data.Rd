@@ -4,17 +4,26 @@
 \alias{prioritization_data}
 \title{Data for the prioritisation scatter (value vs effort)}
 \usage{
-prioritization_data(pf, cfg, y = c("score", "value"))
+prioritization_data(
+  pf,
+  cfg,
+  y = c("score", "value", "estimate"),
+  estimate = NULL
+)
 }
 \arguments{
 \item{pf}{Output of \code{\link[=compute_portfolio]{compute_portfolio()}}.}
 
 \item{cfg}{Configuration list.}
 
-\item{y}{\code{"score"} (RICE) or \code{"value"} (planned mm USD).}
+\item{y}{\code{"score"} (RICE), \code{"value"} (planned mm USD) or \code{"estimate"}
+(planned mm USD, or the value-model estimate when not yet valued).}
+
+\item{estimate}{Value-model median per row of \code{pf} (used by \code{"estimate"}).}
 }
 \value{
-Data frame \code{id}, \code{name}, \code{status}, \code{group}, \code{effort}, \code{x}, \code{y}, \code{size}.
+Data frame \code{id}, \code{name}, \code{status}, \code{group}, \code{effort}, \code{x}, \code{y},
+\code{size}, \code{estimated}.
 }
 \description{
 Data for the prioritisation scatter (value vs effort)

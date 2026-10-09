@@ -13,6 +13,8 @@ app_server <- function(input, output, session) {
     version()
     compute_portfolio(db_portfolio(con), cfg)
   })
+  # value model refitted whenever the data changes (anticipates value in Phase I)
+  value_model <- shiny::reactive(fit_value_model(value_model_data(portfolio(), cfg), cfg))
   history <- shiny::reactive({
     version()
     db_get_status_history(con)
@@ -21,6 +23,7 @@ app_server <- function(input, output, session) {
   state <- list(
     con = con, cfg = cfg, user = usr,
     portfolio = portfolio, history = history, selected = selected, version = version,
+    value_model = value_model,
     # call after every write: re-derives statuses and refreshes all views
     refresh = function() {
       sync_status(con, cfg, usr$user)
@@ -42,6 +45,7 @@ app_server <- function(input, output, session) {
   mod_phase3_server("phase3", state)
   mod_audit_server("audit", state)
   mod_process_server("process", state)
+  mod_value_model_server("value_model", state)
   mod_parameters_server("parameters", state)
 
   # Process mining: raw activity batches buffered client-side

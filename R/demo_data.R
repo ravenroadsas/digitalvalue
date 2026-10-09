@@ -8,7 +8,7 @@
 #' @export
 seed_demo_data <- function(con, cfg) {
   if (nrow(db_get_initiatives(con))) return(invisible(character(0)))
-  t0 <- Sys.time() - 120 * 86400
+  t0 <- Sys.time() - 200 * 86400
   at <- function(days) t0 + days * 86400
   demo <- list(
     list(name = "Workover candidate selection with ML", bu = "Production", owner = "Ana Ruiz",
@@ -69,6 +69,46 @@ seed_demo_data <- function(con, cfg) {
          desc = "Lab results flow directly into the production database.",
          cost = 0.05, rice = list(90, "S", "Certain", "XS", "Simple integration, vendor API available."),
          plan = NULL, review = NULL, final = NULL),
+    list(name = "Gas lift optimisation", bu = "Production", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(300, "L", "High", "M", NULL),
+         plan = list(list("p_uptime", list(base_bopd = 8000, uptime_before = 93, uptime_after = 94), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 0.9),
+    list(name = "Pump-off controller analytics", bu = "Production", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(150, "M", "High", "M", NULL),
+         plan = list(list("p_direct", list(bopd = 25), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 0.8),
+    list(name = "Electronic permit to work", bu = "HSE", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(1500, "S", "Certain", "M", NULL),
+         plan = list(list("t_users", list(n_users = 300, hours_week = 0.5, weeks_year = 46), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 0.95),
+    list(name = "Predictive maintenance - rotating equipment", bu = "Maintenance", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(200, "XL", "Low", "L", NULL),
+         plan = list(list("m_risk_avoided", list(cost_mm_usd = 20, prob_before = 10, prob_after = 5), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 0.6),
+    list(name = "Reservoir surveillance dashboard", bu = "Reservoir", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(120, "L", "High", "S", NULL),
+         plan = list(list("p_decline", list(base_bopd = 6000, decline_before = 12, decline_after = 11), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 1.1),
+    list(name = "Procurement spend analytics", bu = "Supply chain", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(80, "M", "High", "M", NULL),
+         plan = list(list("m_cost_saving", list(events_per_year = 30, saving_kusd = 15), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 0.85),
+    list(name = "Flare monitoring with cameras", bu = "HSE", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(60, "S", "Certain", "S", NULL),
+         plan = list(list("m_direct", list(mm_usd = 0.12), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 1),
+    list(name = "Integrated asset model", bu = "Reservoir", owner = "Historical",
+         desc = "Completed initiative (history used to calibrate the value model).",
+         cost = 0.5, rice = list(50, "XL", "Low", "XL", NULL),
+         plan = list(list("r_recovery", list(ooip_mmbbl = 150, rf_before = 30, rf_after = 30.4, category = "2P"), "Historical valuation.")),
+         review = NULL, final = "Audited", actual_factor = 0.7),
     list(name = "Mobile field data capture", bu = "Operations", owner = "Raul Cano",
          desc = "Replaces paper field tickets with a mobile app.",
          cost = NA, rice = NULL, plan = NULL, review = NULL, final = NULL)
@@ -109,7 +149,13 @@ seed_demo_data <- function(con, cfg) {
       db_set_status(con, id, path[j], "demo", time = at(day + 20 + 15 * j))
     }
     if (identical(d$final, "Audited")) {
-      for (l in d$actual) {
+      if (is.null(d[["actual"]]) && !is.null(d[["actual_factor"]])) {
+        pf <- compute_portfolio(db_portfolio(con), cfg)
+        planned <- pf$plan_value_mm_usd[pf$id == id]
+        d$actual <- list(list("m_direct", list(mm_usd = planned * d[["actual_factor"]]),
+                              "Measured value at audit."))
+      }
+      for (l in d[["actual"]]) {
         db_add_prmt_line(con, id, prmt_calculate(l[[1]], l[[2]], cfg), "actual",
                          comment = l[[3]], user = "planning", time = at(day + 80))
       }

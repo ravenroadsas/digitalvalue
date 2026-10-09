@@ -50,6 +50,19 @@ Each initiative can have any number of **calculation lines**. A line has a metri
 
 To add a method, add an entry to `prmt_methods()` in `R/fct_prmt.R`. The UI form is generated from the method's parameter list.
 
+### Value model: anticipating value in Phase I
+
+**Admin → Value model** fits a regression of the monetary value on the RICE inputs, using every initiative that has both a RICE score and a value. The value is the planning-validated value when the initiative is approved, otherwise the Phase II PRMT total. RICE is multiplicative, so the regression is log-linear:
+
+`log(value) = b0 + b1·log10(users) + b2·log(impact) + b3·log(confidence) + b4·log(effort)`
+
+* **Coefficients** are elasticities. For example, doubling impact multiplies the value by `2^b2`. Effort is a predictor here, not a divisor as in the RICE score, because larger projects tend to carry larger value.
+* **Range**: the regression prediction interval, back-transformed from the log scale. It is reported as median and P10–P90 (`value_model_interval = 0.8`). It accounts for both the residual scatter and the uncertainty in the coefficients.
+* **Few data points**: below `value_model_min_n` (8) valued initiatives, a simple model `log(value) ~ log(reach × impact × confidence)` is used. Below 4, no estimate is given. Predictors that don't vary in the data are dropped.
+* **Admin tab**: shows the correlation (log RICE value vs log value, plus Spearman), R² and adjusted R², the typical width of the range, the interval coverage (share of observed values inside the range), the coefficient table, a RICE value vs value chart, a predicted vs actual chart, and the residuals of each initiative.
+* **Phase I**: the score preview shows the anticipated value and its range for the inputs being entered. It flags when the upper end reaches the Phase III value limit. Once a valuation exists, it says whether that valuation falls within the range. The ranking shows the estimate for each initiative, and the scatter's *Value or estimate* view plots not-yet-valued initiatives at their estimate as hollow dashed markers.
+* **Refitting**: the model refits automatically whenever a valuation, review or audit is saved.
+
 ### Status workflow and alerts
 
 Until a decision is taken, the status shows the next pending assessment (`Phase I` → `Phase II` → `Phase III` → `Ready`). It is recalculated after every save. Decisions (`Prioritized`, `In execution`, `Closed`, `Audited`, `Rejected`) are explicit actions in the sidebar, and every change is written to `status_history`.
@@ -78,6 +91,7 @@ R/
   fct_rice.R, fct_prmt.R, fct_gates.R,   business logic: pure functions, unit tested
   fct_kpi.R, fct_plots.R, fct_process_mining.R
   data_db.R                              ALL database access (single file)
+  fct_value_model.R                      RICE -> value regression and range estimate
   config.R                               configuration from pins (Connect) or CSV
   demo_data.R, utils_ui.R
 inst/config/*.csv                        parameters, RICE weights, process-mining event map
@@ -146,3 +160,4 @@ shiny::runApp()                          # uses app.R
 |---|---|
 | ![Phase I](docs/screenshots/phase1_rice.png) | ![Phase II](docs/screenshots/phase2_prmt.png) |
 | ![Audit](docs/screenshots/audit.png) | ![Process log](docs/screenshots/process_log.png) |
+| ![Value model](docs/screenshots/value_model.png) | ![Phase I estimate](docs/screenshots/phase1_estimate.png) |

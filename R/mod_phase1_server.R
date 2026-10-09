@@ -41,6 +41,10 @@ mod_phase1_server <- function(id, state) {
       a <- assessment()
       if (is.null(a)) return(callout("Enter a valid number of users.", type = "danger"))
       req2 <- requires_phase2(a$effort, a$score, cfg)
+      m <- state$value_model()
+      est <- predict_value(m, a$users, a$impact, a$confidence, a$effort, cfg)
+      lab <- interval_labels(m$level)
+      r <- state$row()
       htmltools::tagList(
         htmltools::div(class = "dv-formula", sprintf(
           "log10(%s) \u00d7 %s \u00d7 %s / %s = %.2f \u00d7 %s \u00d7 %s / %s = %.2f",
@@ -51,7 +55,26 @@ mod_phase1_server <- function(id, state) {
           sprintf("Effort \u2265 %s or score \u2265 %s: a monetary (PRMT) valuation will be required.",
                   cfg$params$gate2_effort_min, cfg$params$gate2_score_min))
         else callout(type = "success", title = "Phase I sufficient",
-                     "Below Phase II thresholds: can be prioritised on RICE alone.")
+                     "Below Phase II thresholds: can be prioritised on RICE alone."),
+        if (is.na(est$median)) callout(type = "info", title = "Anticipated value", m$message)
+        else callout(type = "info", title = "Anticipated value (value model)",
+          htmltools::div(class = "dv-kpi-value", style = "font-size:15px",
+            sprintf("%s mm USD", fmt_num(est$median, 2)),
+            htmltools::span(class = "dv-muted", style = "font-size:11px; font-weight:400",
+              sprintf(" %s\u2013%s: %s \u2013 %s mm USD", lab[1], lab[2],
+                      fmt_num(est$low, 2), fmt_num(est$high, 2)))),
+          htmltools::div(class = "dv-muted", sprintf(
+            "%s model on %d valued initiatives \u00b7 R\u00b2 %s \u00b7 correlation %s.",
+            if (m$type == "simple") "Simple" else "Multivariable", m$n,
+            fmt_num(m$r2, 2), fmt_num(m$cor_pearson %||% NA, 2))),
+          if (est$high >= cfg$params$gate3_value_min_mm_usd)
+            htmltools::div(sprintf("Upper end \u2265 %s mm USD: Phase III planning review is likely.",
+                                   cfg$params$gate3_value_min_mm_usd)),
+          if (!is.null(r) && isTRUE(r$plan_value_mm_usd > 0))
+            htmltools::div(sprintf("Phase II valuation recorded: %s mm USD (%s the range).",
+                                   fmt_num(r$planned_value_mm_usd, 2),
+                                   if (r$planned_value_mm_usd < est$low) "below"
+                                   else if (r$planned_value_mm_usd > est$high) "above" else "within")))
       )
     })
 
@@ -75,17 +98,27 @@ mod_phase1_server <- function(id, state) {
     })
 
     output$scatter <- echarts4r::renderEcharts4r({
-      echart_from_option(prioritization_option(state$portfolio(), cfg, input$y_axis %||% "score",
-                                               highlight = state$selected()))
+      pf <- state$portfolio()
+      echart_from_option(prioritization_option(pf, cfg, input$y_axis %||% "score",
+                                               highlight = state$selected(),
+                                               estimate = portfolio_estimates(pf, state$value_model(), cfg)$median))
     })
 
     rank_tbl <- shiny::reactive({
       pf <- state$portfolio()
-      pf <- pf[!is.na(pf$score), ]
-      pf <- pf[order(pf$rice_rank), ]
+      est <- portfolio_estimates(pf, state$value_model(), cfg)
+      keep <- !is.na(pf$score)
+      pf <- pf[keep, ]; est <- est[keep, , drop = FALSE]
+      o <- order(pf$rice_rank)
+      pf <- pf[o, ]; est <- est[o, , drop = FALSE]
       data.frame(Rank = pf$rice_rank, ID = pf$id, Initiative = pf$name,
                  Users = pf$users, I = pf$impact, C = pf$confidence, E = pf$effort,
-                 Score = round(pf$score, 2), Status = pf$status, check.names = FALSE)
+                 Score = round(pf$score, 2),
+                 `Est. mm$` = round(est$median, 2),
+                 `Est. range` = ifelse(is.na(est$median), "",
+                                       sprintf("%.2f\u2013%.2f", est$low, est$high)),
+                 `Valued mm$` = ifelse(pf$planned_value_mm_usd > 0, round(pf$planned_value_mm_usd, 2), NA),
+                 Status = pf$status, check.names = FALSE)
     })
     output$ranking <- DT::renderDT({
       cols <- status_colors()

@@ -19,8 +19,11 @@ mod_phase1_ui <- function(id) {
     htmltools::tagList(
       box("Prioritisation \u00b7 value vs effort",
           right = shiny::radioButtons(ns("y_axis"), NULL, inline = TRUE,
-                                      choices = c("RICE score" = "score", "Value mm USD" = "value")),
-          echarts4r::echarts4rOutput(ns("scatter"), height = "380px")),
+                                      choices = c("RICE score" = "score", "Value mm USD" = "value",
+                                                  "Value or estimate" = "estimate")),
+          echarts4r::echarts4rOutput(ns("scatter"), height = "380px"),
+          htmltools::div(class = "dv-muted",
+            "Hollow dashed markers: not yet valued \u2013 value anticipated by the value model (Admin \u2192 Value model).")),
       bslib::layout_columns(col_widths = c(7, 5),
         box("RICE ranking", DT::DTOutput(ns("ranking"))),
         box("Gate alerts", shiny::uiOutput(ns("alerts"))))

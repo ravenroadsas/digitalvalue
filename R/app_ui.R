@@ -30,6 +30,7 @@ app_ui <- function(request) {
     bslib::nav_spacer(),
     bslib::nav_menu("Admin", align = "right",
       bslib::nav_panel("Process log", value = "process", mod_process_ui("process")),
+      bslib::nav_panel("Value model", value = "value_model", mod_value_model_ui("value_model")),
       bslib::nav_panel("Parameters", value = "parameters", mod_parameters_ui("parameters"))
     )
   )
