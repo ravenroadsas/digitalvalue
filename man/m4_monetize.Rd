@@ -24,5 +24,6 @@ mm USD.
 \item R: MMbbl x value per barrel of the category (one-off)
 \item M: as is (annual)
 \item T: khours x 1000 x salary/h x productivity coefficient (annual)
+\item C: cost, as is (mm USD; never added to the value total)
 }
 }

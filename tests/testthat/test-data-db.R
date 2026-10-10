@@ -61,10 +61,11 @@ test_that("4M lines, expert reviews with 4M figures and audits with adoption", {
   expect_equal(r$r_category, "1P")
   expect_equal(r$value_mm_usd, m4_value(v, cfg)$total)
 
-  a <- list(P = 20, R = 0, M = 0.1, T = 2, category = "2P")
+  a <- list(P = 20, R = 0, M = 0.1, T = 2, C = 0.7, category = "2P")
   db_add_audit(con, id, a, 75, 0.5, 1, "fine", "boss")
   au <- db_get_audits(con, id)
   expect_equal(au$adoption_pct, 75)
+  expect_equal(au$c_mm_usd, 0.7)
   expect_equal(au$realization_pct, 50)
 
   pf <- db_portfolio(con)
@@ -74,6 +75,8 @@ test_that("4M lines, expert reviews with 4M figures and audits with adoption", {
   expect_equal(pf$review_p, 25)
   expect_equal(pf$actual_p, 20)
   expect_equal(pf$adoption_pct, 75)
+  expect_equal(pf$actual_c, 0.7)
+  expect_equal(pf$review_cost_mm_usd, 0.6)
   expect_equal(pf$audited_value_mm_usd, 0.5)
 
   db_delete_m4_line(con, lid)
@@ -141,4 +144,16 @@ test_that("sql_params rewrites placeholders for PostgreSQL only", {
   pg <- structure(list(), class = "PqConnection")
   expect_equal(digitalvalue:::sql_params(pg, "a = ? AND b = ?"), "a = $1 AND b = $2")
   expect_equal(digitalvalue:::sql_params(list(), "a = ?"), "a = ?")
+})
+
+test_that("review cost defaults to the C figure; old databases are migrated", {
+  cfg <- test_cfg()
+  con <- test_con()
+  id <- reg(con, cfg)
+  db_add_review(con, id, "Approve", list(M = 1, C = 0.9))
+  expect_equal(db_get_reviews(con, id)$cost_mm_usd, 0.9)
+  DBI::dbExecute(con, "ALTER TABLE audits DROP COLUMN c_mm_usd")
+  expect_false("c_mm_usd" %in% DBI::dbListFields(con, "audits"))
+  db_init(con)
+  expect_true("c_mm_usd" %in% DBI::dbListFields(con, "audits"))
 })

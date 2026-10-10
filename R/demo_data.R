@@ -133,11 +133,17 @@ seed_demo_data <- function(con, cfg) {
       db_add_m4_line(con, id, m4_calculate(l[[1]], l[[2]], cfg), comment = l[[3]],
                      user = "superuser", time = at(day + 10))
     }
+    if (length(d$plan) && !is.na(d$cost)) {
+      # cost metric C: implementation cost split into capex and one year of opex
+      db_add_m4_line(con, id, m4_calculate("c_direct", list(capex_mm_usd = d$cost * 0.8,
+                                                           opex_mm_usd_yr = d$cost * 0.2, years = 1), cfg),
+                     comment = "Build cost plus first-year run cost.", user = "superuser", time = at(day + 10))
+    }
     sync_status_one(con, cfg, id, at(day + 10))
     if (!is.null(d$review)) {
       v <- scaled_m4(id, 0.9)
-      cost <- db_get_initiatives(con, id)$cost_mm_usd
-      db_add_review(con, id, d$review, v, m4_value(v, cfg)$total, cost,
+      v$C <- d$cost * 1.1  # reviewers add a contingency to the cost
+      db_add_review(con, id, d$review, v, m4_value(v, cfg)$total, v$C,
                     comment = if (d$review == "Approve") "Value haircut 10% for execution risk."
                               else "Technology not mature; revisit next year.",
                     user = "superuser", time = at(day + 18))
@@ -156,6 +162,7 @@ seed_demo_data <- function(con, cfg) {
       v <- scaled_m4(id, d[["actual_factor"]])
       pf <- compute_portfolio(db_portfolio(con), cfg)
       expected <- pf$planned_value_mm_usd[pf$id == id]
+      v$C <- pf$planned_cost_mm_usd[pf$id == id] * (2.1 - d[["actual_factor"]])  # weaker delivery, higher cost
       db_add_audit(con, id, v, d[["adoption"]], m4_value(v, cfg)$total, expected,
                    "Measured 6 months after go-live.", user = "superuser", time = at(day + 81))
       db_set_status(con, id, "Audited", "superuser", time = at(day + 81))

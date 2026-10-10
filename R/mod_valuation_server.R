@@ -78,10 +78,14 @@ mod_valuation_server <- function(id, state) {
         kpi_tile(paste(k, "\u00b7", s$label[i]), fmt_num(s$value[i], digits, paste0(" ", s$unit[i])),
                  sprintf("%s mm USD \u00b7 %d line(s)", fmt_num(s$value_mm_usd[i], 2), s$n_lines[i]))
       }
+      value <- sum(s$value_mm_usd[s$metric %in% m4_value_metrics])
+      cost <- s$value[s$metric == "C"]
       htmltools::div(class = "dv-kpis",
         tile("P", 0), tile("R", 3), tile("M", 2), tile("T", 1),
-        kpi_tile("4M total", fmt_num(sum(s$value_mm_usd), 2, " mm USD"), "P, M, T annual \u00b7 R one-off",
-                 "strong"))
+        kpi_tile("C \u00b7 Cost", fmt_num(cost, 2, " mm USD"),
+                 sprintf("%d line(s) \u00b7 value/cost %s", s$n_lines[s$metric == "C"],
+                         fmt_num(if (cost > 0 && value > 0) value / cost else NA, 1, "x"))),
+        kpi_tile("4M value", fmt_num(value, 2, " mm USD"), "P, M, T annual \u00b7 R one-off", "strong"))
     })
 
     output$lines <- DT::renderDT({
@@ -95,7 +99,7 @@ mod_valuation_server <- function(id, state) {
 
     output$params_note <- shiny::renderUI({
       p <- cfg$params
-      sprintf("Conversion: P \u00d7 %s d \u00d7 %s USD/bbl \u00b7 R \u00d7 value per bbl of the category \u00b7 T \u00d7 %s USD/h (salary \u00d7 %s).",
+      sprintf("Conversion: P \u00d7 %s d \u00d7 %s USD/bbl \u00b7 R \u00d7 value per bbl of the category \u00b7 T \u00d7 %s USD/h (salary \u00d7 %s) \u00b7 C = cost in mm USD, kept separate from value.",
               p$days_per_year, p$netback_usd_bbl, fmt_num(time_value_usd_hour(cfg), 0),
               p$time_productivity_coef)
     })

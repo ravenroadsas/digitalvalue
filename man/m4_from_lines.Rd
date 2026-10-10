@@ -10,7 +10,7 @@ m4_from_lines(lines)
 \item{lines}{4M calculation lines.}
 }
 \value{
-Named list \code{P}, \code{R}, \code{M}, \code{T}, \code{category}.
+Named list \code{P}, \code{R}, \code{M}, \code{T}, \code{C}, \code{category}.
 }
 \description{
 4M figures implied by the calculation lines of an initiative

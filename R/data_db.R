@@ -75,7 +75,7 @@ db_schema <- c(
   audits = "CREATE TABLE IF NOT EXISTS audits (
     audit_id VARCHAR PRIMARY KEY, initiative_id VARCHAR NOT NULL,
     p_bopd DOUBLE, r_mmbbl DOUBLE, r_category VARCHAR, m_mm_usd DOUBLE,
-    t_khours DOUBLE, adoption_pct DOUBLE, actual_value_mm_usd DOUBLE,
+    t_khours DOUBLE, c_mm_usd DOUBLE, adoption_pct DOUBLE, actual_value_mm_usd DOUBLE,
     expected_value_mm_usd DOUBLE, realization_pct DOUBLE, comment VARCHAR,
     auditor VARCHAR, audited_at VARCHAR)",
   value_models = "CREATE TABLE IF NOT EXISTS value_models (
@@ -97,7 +97,22 @@ db_schema <- c(
 #' @export
 db_init <- function(con) {
   for (sql in db_schema) DBI::dbExecute(con, sql)
+  db_migrate(con)
   invisible(names(db_schema))
+}
+
+# Columns added after the first release: added in place to existing databases.
+db_migrations <- list(
+  list(table = "audits", column = "c_mm_usd", type = "DOUBLE")
+)
+
+db_migrate <- function(con) {
+  for (m in db_migrations) {
+    if (!m$column %in% DBI::dbListFields(con, m$table)) {
+      DBI::dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN %s %s", m$table, m$column, m$type))
+    }
+  }
+  invisible(TRUE)
 }
 
 # Helpers ---------------------------------------------------------------------
@@ -355,9 +370,10 @@ m4_frame <- function(v) {
 #' @param con A DBI connection.
 #' @param id Initiative id.
 #' @param decision `"Approve"`, `"Rework"` or `"Reject"`.
-#' @param values Named list `P`, `R`, `category`, `M`, `T` (native units).
+#' @param values Named list `P`, `R`, `category`, `M`, `T` (native units) and
+#'   optionally `C` (cost, used when `cost_mm_usd` is missing).
 #' @param value_mm_usd Monetary equivalent of `values` (see [m4_value()]).
-#' @param cost_mm_usd Validated cost.
+#' @param cost_mm_usd Validated cost (the review's C figure).
 #' @param comment Comment.
 #' @param user Reviewer.
 #' @param time Review time.
@@ -366,6 +382,7 @@ m4_frame <- function(v) {
 db_add_review <- function(con, id, decision, values = list(), value_mm_usd = NA,
                           cost_mm_usd = NA, comment = NA, user = "unknown", time = Sys.time()) {
   decision <- match.arg(decision, review_decisions)
+  if ((is.null(cost_mm_usd) || is.na(cost_mm_usd)) && !is.null(values$C)) cost_mm_usd <- values$C
   rid <- new_uid("R")
   DBI::dbAppendTable(con, "reviews", cbind(
     data.frame(review_id = rid, initiative_id = id, decision = decision, stringsAsFactors = FALSE),
@@ -391,7 +408,7 @@ db_get_reviews <- function(con, id = NULL) {
 #' Record a post-execution value audit: actual 4M figures plus adoption
 #' @param con A DBI connection.
 #' @param id Initiative id.
-#' @param values Named list `P`, `R`, `category`, `M`, `T` (actual, native units).
+#' @param values Named list `P`, `R`, `category`, `M`, `T`, `C` (actual, native units).
 #' @param adoption_pct Share of the intended users actually using the solution.
 #' @param actual_value_mm_usd Monetary equivalent of `values`.
 #' @param expected_value_mm_usd Ex-ante value the audit is compared with.
@@ -407,7 +424,8 @@ db_add_audit <- function(con, id, values = list(), adoption_pct = NA, actual_val
   DBI::dbAppendTable(con, "audits", cbind(
     data.frame(audit_id = aid, initiative_id = id, stringsAsFactors = FALSE),
     m4_frame(values),
-    data.frame(adoption_pct = na_num(adoption_pct), actual_value_mm_usd = na_num(actual_value_mm_usd),
+    data.frame(c_mm_usd = na_num(values$C), adoption_pct = na_num(adoption_pct),
+               actual_value_mm_usd = na_num(actual_value_mm_usd),
                expected_value_mm_usd = na_num(expected_value_mm_usd),
                realization_pct = realization_pct(na_num(actual_value_mm_usd), na_num(expected_value_mm_usd)),
                comment = na_chr(comment), auditor = user, audited_at = now_utc(time),
@@ -506,7 +524,9 @@ db_portfolio <- function(con) {
          SUM(CASE WHEN metric = 'R' THEN result_value ELSE 0 END) AS plan_r,
          SUM(CASE WHEN metric = 'M' THEN result_value ELSE 0 END) AS plan_m,
          SUM(CASE WHEN metric = 'T' THEN result_value ELSE 0 END) AS plan_t,
-         SUM(value_mm_usd) AS plan_value_mm_usd, COUNT(*) AS plan_lines
+         SUM(CASE WHEN metric = 'C' THEN result_value ELSE 0 END) AS plan_c,
+         SUM(CASE WHEN metric <> 'C' THEN value_mm_usd ELSE 0 END) AS plan_value_mm_usd,
+         SUM(CASE WHEN metric <> 'C' THEN 1 ELSE 0 END) AS plan_lines
        FROM m4_lines GROUP BY initiative_id),
      rv AS (SELECT * FROM (
         SELECT r.*, ROW_NUMBER() OVER (PARTITION BY initiative_id
@@ -520,6 +540,7 @@ db_portfolio <- function(con) {
        rc.score, rc.scored_by, rc.scored_at,
        COALESCE(pl.plan_p, 0) AS plan_p, COALESCE(pl.plan_r, 0) AS plan_r,
        COALESCE(pl.plan_m, 0) AS plan_m, COALESCE(pl.plan_t, 0) AS plan_t,
+       COALESCE(pl.plan_c, 0) AS plan_c,
        COALESCE(pl.plan_value_mm_usd, 0) AS plan_value_mm_usd,
        COALESCE(pl.plan_lines, 0) AS plan_lines,
        rv.decision AS review_decision, rv.p_bopd AS review_p, rv.r_mmbbl AS review_r,
@@ -527,7 +548,7 @@ db_portfolio <- function(con) {
        rv.value_mm_usd AS review_value_mm_usd, rv.cost_mm_usd AS review_cost_mm_usd,
        rv.reviewer, rv.reviewed_at,
        au.p_bopd AS actual_p, au.r_mmbbl AS actual_r, au.m_mm_usd AS actual_m,
-       au.t_khours AS actual_t, au.adoption_pct,
+       au.t_khours AS actual_t, au.c_mm_usd AS actual_c, au.adoption_pct,
        au.actual_value_mm_usd AS audited_value_mm_usd, au.audited_at
      FROM initiatives i
      LEFT JOIN rice rc ON rc.initiative_id = i.id

@@ -21,6 +21,7 @@ Data frame per metric: \code{metric}, \code{label}, \code{unit}, \code{estimate}
 \code{realization_pct} (actual vs review if any, else vs estimate).
 }
 \description{
-Compares, per metric, the 4M estimate (calculation lines), the expert
-review and the post-execution audit, in native units and mm USD.
+Compares, per metric (P, R, M, T and cost C), the 4M estimate (calculation
+lines), the expert review and the post-execution audit, in native units and
+mm USD. For C the realisation is actual cost / planned cost.
 }

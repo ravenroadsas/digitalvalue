@@ -9,7 +9,7 @@ update_m4_inputs(session, v)
 \arguments{
 \item{session}{Module session.}
 
-\item{v}{Named list \code{P}, \code{R}, \code{M}, \code{T}, \code{category}.}
+\item{v}{Named list \code{P}, \code{R}, \code{M}, \code{T}, \code{C}, \code{category}.}
 }
 \description{
 Fill 4M inputs from a list of figures

@@ -50,13 +50,15 @@ group_style <- function() {
 #' Data for the prioritisation scatter (value vs effort)
 #' @param pf Output of [compute_portfolio()].
 #' @param cfg Configuration list.
-#' @param y `"score"` (RICE), `"value"` (planned mm USD) or `"estimate"`
-#'   (planned mm USD, or the value-model estimate when not yet valued).
+#' @param y `"rice_value"` (reach x impact x confidence, i.e. RICE without the
+#'   effort divisor, so the chart reads as value vs effort), `"value"` (ex-ante
+#'   mm USD) or `"estimate"` (ex-ante mm USD, or the value-model estimate when
+#'   not yet valued).
 #' @param estimate Value-model median per row of `pf` (used by `"estimate"`).
 #' @return Data frame `id`, `name`, `status`, `group`, `effort`, `x`, `y`,
 #'   `size`, `estimated`.
 #' @export
-prioritization_data <- function(pf, cfg, y = c("score", "value", "estimate"), estimate = NULL) {
+prioritization_data <- function(pf, cfg, y = c("rice_value", "value", "estimate"), estimate = NULL) {
   y <- match.arg(y)
   d <- pf[!is.na(pf$score), , drop = FALSE]
   if (!nrow(d)) {
@@ -73,7 +75,9 @@ prioritization_data <- function(pf, cfg, y = c("score", "value", "estimate"), es
   jitter <- ifelse(n > 1, ((k - 1) / pmax(n - 1, 1) - 0.5) * 0.5, 0)
   valued <- !is.na(d$planned_value_mm_usd) & d$planned_value_mm_usd > 0
   estimated <- y == "estimate" & !valued & !is.na(est)
-  yv <- switch(y, score = d$score, value = d$planned_value_mm_usd,
+  rice_value <- d$reach_value * rice_weight(d$impact, "impact", cfg) *
+    rice_weight(d$confidence, "confidence", cfg)
+  yv <- switch(y, rice_value = rice_value, value = d$planned_value_mm_usd,
                estimate = ifelse(estimated, est, d$planned_value_mm_usd))
   data.frame(id = d$id, name = d$name, status = d$status, group = plot_group(d$status),
              effort = d$effort, x = x + jitter, y = yv,
@@ -87,13 +91,13 @@ js <- function(...) htmlwidgets::JS(paste0(...))
 #' @param highlight Optional selected initiative id (drawn with a ring).
 #' @return An ECharts option list.
 #' @export
-prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), highlight = NULL,
+prioritization_option <- function(pf, cfg, y = c("rice_value", "value", "estimate"), highlight = NULL,
                                   estimate = NULL) {
   y <- match.arg(y)
   d <- prioritization_data(pf, cfg, y, estimate)
   gs <- group_style()
   lv <- rice_levels(cfg, "effort")
-  ylab <- switch(y, score = "RICE score", value = "Value (mm USD)",
+  ylab <- switch(y, rice_value = "R \u00d7 I \u00d7 C", value = "Ex-ante value (mm USD)",
                  estimate = "Value / est. mm USD")
   series <- lapply(gs$group, function(g) {
     s <- d[d$group == g, , drop = FALSE]
@@ -121,8 +125,20 @@ prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), 
   })
   p <- cfg$params
   gate_x <- rice_ordinal(p$gate2_effort_min, "effort", cfg) - 0.5
-  gate_y <- if (y == "score") p$gate2_score_min else p$gate3_value_min_mm_usd
-  gate_lbl <- if (y == "score") "Valuation gate (score)" else "Review gate (value)"
+  if (y == "rice_value") {
+    # score gate (R x I x C / effort >= threshold) as a staircase: R x I x C >= threshold x effort
+    w <- rice_weight(lv, "effort", cfg)
+    stair <- unlist(lapply(seq_along(lv), function(i)
+      list(c(i - 0.5, p$gate2_score_min * w[i]), c(i + 0.5, p$gate2_score_min * w[i]))), recursive = FALSE)
+    series[[length(series) + 1]] <- list(
+      name = sprintf("Valuation gate (score \u2265 %s)", p$gate2_score_min), type = "line",
+      data = stair, showSymbol = FALSE, silent = TRUE, z = 1,
+      lineStyle = list(type = "dashed", color = mono$c500, width = 1), itemStyle = list(color = mono$c500))
+    gate_lines <- list()
+  } else {
+    gate_lines <- list(list(yAxis = p$gate3_value_min_mm_usd, name = "Review gate (value)",
+                            label = list(formatter = "Review gate (value)")))
+  }
   # gate lines go on the first non-empty series
   host <- which(vapply(series, function(s) length(s$data) > 0, logical(1)))[1]
   if (is.na(host)) host <- 1
@@ -130,9 +146,10 @@ prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), 
     silent = TRUE, symbol = "none",
     lineStyle = list(type = "dashed", color = mono$c500, width = 1),
     label = list(fontSize = 9, color = mono$c600, position = "insideEndTop"),
-    data = list(list(yAxis = gate_y, name = gate_lbl, label = list(formatter = gate_lbl)),
-                list(xAxis = gate_x, name = "Valuation gate (effort)",
-                     label = list(formatter = "Valuation gate (effort)"))))
+    data = c(gate_lines, list(list(xAxis = gate_x, name = "Valuation gate (effort)",
+                                   label = list(formatter = "Valuation gate (effort)")))))
+  # keep the axis on the initiatives, not on the far end of the gate staircase
+  y_max <- if (y == "rice_value" && nrow(d)) ceiling(max(d$y, na.rm = TRUE) * 1.15) else NULL
   list(
     color = gs$color,
     textStyle = list(fontSize = 10, color = mono$c700),
@@ -149,7 +166,7 @@ prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), 
                  axisLabel = list(formatter = js(
                    "function (v) { var l = ", jsonlite::toJSON(lv),
                    "; return Number.isInteger(v) ? (l[v - 1] || '') : ''; }"))),
-    yAxis = list(type = "value", name = ylab, nameTextStyle = list(fontSize = 10),
+    yAxis = list(type = "value", name = ylab, max = y_max, nameTextStyle = list(fontSize = 10),
                  splitLine = list(lineStyle = list(color = mono$c100))),
     series = series
   )

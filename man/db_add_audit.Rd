@@ -21,7 +21,7 @@ db_add_audit(
 
 \item{id}{Initiative id.}
 
-\item{values}{Named list \code{P}, \code{R}, \code{category}, \code{M}, \code{T} (actual, native units).}
+\item{values}{Named list \code{P}, \code{R}, \code{category}, \code{M}, \code{T}, \code{C} (actual, native units).}
 
 \item{adoption_pct}{Share of the intended users actually using the solution.}
 

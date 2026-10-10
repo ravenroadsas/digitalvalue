@@ -30,7 +30,7 @@ mod_portfolio_server <- function(id, state) {
     })
 
     output$scatter <- echarts4r::renderEcharts4r({
-      echart_from_option(prioritization_option(state$portfolio(), cfg, input$y_axis %||% "score",
+      echart_from_option(prioritization_option(state$portfolio(), cfg, input$y_axis %||% "rice_value",
                                                highlight = state$selected(),
                                                estimate = estimates()$predicted))
     })

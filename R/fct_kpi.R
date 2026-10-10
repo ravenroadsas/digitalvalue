@@ -89,8 +89,9 @@ status_summary <- function(pf) {
 
 #' 4M figures of one initiative across the lifecycle
 #'
-#' Compares, per metric, the 4M estimate (calculation lines), the expert
-#' review and the post-execution audit, in native units and mm USD.
+#' Compares, per metric (P, R, M, T and cost C), the 4M estimate (calculation
+#' lines), the expert review and the post-execution audit, in native units and
+#' mm USD. For C the realisation is actual cost / planned cost.
 #' @param lines 4M calculation lines of the initiative.
 #' @param review Latest review row (or `NULL`).
 #' @param audit Latest audit row (or `NULL`).
@@ -103,13 +104,14 @@ m4_lifecycle <- function(lines, review = NULL, audit = NULL, cfg) {
   e <- m4_summary(lines)
   vals <- function(row) {
     if (is.null(row) || !nrow(row)) return(NULL)
+    # reviews store cost as cost_mm_usd, audits as c_mm_usd
     list(P = row$p_bopd, R = row$r_mmbbl, category = row$r_category, M = row$m_mm_usd,
-         T = row$t_khours)
+         T = row$t_khours, C = row$cost_mm_usd %||% row$c_mm_usd)
   }
   stage <- function(row) {
     v <- vals(row)
-    if (is.null(v)) return(list(native = rep(NA_real_, 4), mm = rep(NA_real_, 4)))
-    native <- vapply(c("P", "R", "M", "T"), function(k) as.numeric(v[[k]] %||% NA), numeric(1))
+    if (is.null(v)) return(list(native = rep(NA_real_, 5), mm = rep(NA_real_, 5)))
+    native <- vapply(c("P", "R", "M", "T", "C"), function(k) as.numeric(v[[k]] %||% NA), numeric(1))
     list(native = unname(native), mm = unname(m4_value(v, cfg)$by_metric))
   }
   r <- stage(review); a <- stage(audit)

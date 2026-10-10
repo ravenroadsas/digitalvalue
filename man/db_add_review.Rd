@@ -23,11 +23,12 @@ db_add_review(
 
 \item{decision}{\code{"Approve"}, \code{"Rework"} or \code{"Reject"}.}
 
-\item{values}{Named list \code{P}, \code{R}, \code{category}, \code{M}, \code{T} (native units).}
+\item{values}{Named list \code{P}, \code{R}, \code{category}, \code{M}, \code{T} (native units) and
+optionally \code{C} (cost, used when \code{cost_mm_usd} is missing).}
 
 \item{value_mm_usd}{Monetary equivalent of \code{values} (see \code{\link[=m4_value]{m4_value()}}).}
 
-\item{cost_mm_usd}{Validated cost.}
+\item{cost_mm_usd}{Validated cost (the review's C figure).}
 
 \item{comment}{Comment.}
 

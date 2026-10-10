@@ -10,7 +10,6 @@ mod_review_ui <- function(id) {
         htmltools::div(class = "dv-section", "Evaluation"),
         shiny::radioButtons(ns("decision"), "Decision", choices = review_decisions, inline = TRUE),
         m4_inputs(ns),
-        shiny::numericInput(ns("cost"), "Validated cost (mm USD)", NA, min = 0),
         shiny::textAreaInput(ns("comment"), "Evaluation notes (NPV, risks, conditions)", rows = 3,
                              width = "100%", resize = "vertical"),
         shiny::uiOutput(ns("preview")),
@@ -35,25 +34,30 @@ m4_inputs <- function(ns) {
     bslib::layout_columns(col_widths = c(6, 6),
       shiny::numericInput(ns("T"), "T \u00b7 Time saved (khours/yr)", 0, min = 0),
       shiny::numericInput(ns("R"), "R \u00b7 Reserves (MMbbl)", 0, min = 0)),
-    shiny::selectInput(ns("category"), "Reserve category", choices = c("1P", "2P", "3P", "contingent"),
-                       selected = "2P", selectize = FALSE)
+    bslib::layout_columns(col_widths = c(6, 6),
+      shiny::selectInput(ns("category"), "Reserve category", choices = c("1P", "2P", "3P", "contingent"),
+                         selected = "2P", selectize = FALSE),
+      shiny::numericInput(ns("C"), "C \u00b7 Cost (mm USD)", 0, min = 0))
   )
 }
 
 #' Fill 4M inputs from a list of figures
 #' @param session Module session.
-#' @param v Named list `P`, `R`, `M`, `T`, `category`.
+#' @param v Named list `P`, `R`, `M`, `T`, `C`, `category`.
 #' @export
 update_m4_inputs <- function(session, v) {
-  r <- function(x) { x <- suppressWarnings(as.numeric(x %||% 0)); if (is.na(x)) 0 else round(x, 4) }
-  for (k in c("P", "R", "M", "T")) shiny::updateNumericInput(session, k, value = r(v[[k]]))
+  r <- function(x) {
+    x <- suppressWarnings(as.numeric(x %||% 0))
+    if (!length(x) || is.na(x)) 0 else round(x, 4)
+  }
+  for (k in c("P", "R", "M", "T", "C")) shiny::updateNumericInput(session, k, value = r(v[[k]]))
   if (!is.null(v$category) && !is.na(v$category))
     shiny::updateSelectInput(session, "category", selected = v$category)
 }
 
 #' 4M figures implied by the calculation lines of an initiative
 #' @param lines 4M calculation lines.
-#' @return Named list `P`, `R`, `M`, `T`, `category`.
+#' @return Named list `P`, `R`, `M`, `T`, `C`, `category`.
 #' @export
 m4_from_lines <- function(lines) {
   s <- m4_summary(lines)

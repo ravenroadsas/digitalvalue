@@ -51,7 +51,7 @@ Superusers are identified from the Posit Connect login: members of the group in 
 
 ### 4M metrics
 
-The same four metrics are used at every stage: the 4M valuation, the expert review and the value audit.
+The same metrics are used at every stage: the 4M valuation, the expert review and the value audit. There are four value metrics (P, R, M, T) and one cost metric (C). Cost is tracked next to value but **never added to it**. It gives the value/cost ratio, and its planned value feeds the cost side of the review gate. The planned cost is the approved review's C, else the 4M cost estimate, else the cost entered at registration.
 
 | Metric | Calculation methods (4M valuation) | Converted to mm USD by |
 |---|---|---|
@@ -59,6 +59,7 @@ The same four metrics are used at every stage: the 4M valuation, the expert revi
 | **R** Reserves (MMbbl) | direct · recovery-factor uplift on OOIP; category 1P / 2P / 3P / contingent | MMbbl × value per bbl of the category (10 / 6 / 3 / 1 USD/bbl), one-off |
 | **M** Monetary (mm USD) | direct · events × saving per event · avoided cost × probability reduction | as entered, annual |
 | **T** Time saved (khours) | direct · users × h/week × weeks · tasks × minutes saved | khours × 1000 × (salary / work hours) × productivity coefficient **3**, annual |
+| **C** Cost (mm USD) | capex + opex × years · effort (person-months) × rate + licences | as entered; kept separate from value |
 
 Each 4M calculation line stores its parameters as JSON together with the formula and a comment, so it can be traced and recomputed:
 
@@ -90,7 +91,7 @@ Two log-linear regressions chain the lifecycle (`R/fct_value_model.R`):
   * **Portfolio tab:** one callout per missing evaluation type (4M valuation, expert review, value audit), listing the initiatives concerned, plus amber "missing" cells in the register's 4M / Review / Audit columns.
 * **Alerts** list initiatives above a gate with a pending step, closed initiatives without an audit, and initiatives ready for a decision. Clicking an alert opens the initiative on the right view.
 * **Portfolio KPIs**: pipeline, committed and realised value; value/cost; realisation rate (audited ÷ ex-ante); mean adoption; gate compliance (share of required 4M valuations and reviews actually done); decision lead time; open alerts.
-* **Prioritisation chart** (value vs effort, bubble size = reach): single-hue palette, with prioritized initiatives as dark circles and initiatives in execution as the darkest diamonds.
+* **Prioritisation chart** (value vs effort, bubble size = reach): the y-axis is reach × impact × confidence (RICE without the effort divisor), the ex-ante value, or the value / model estimate. On the R × I × C view the RICE-score gate is drawn as a staircase (threshold × effort weight): initiatives above it pass the valuation gate. Single-hue palette, with prioritized initiatives as dark circles and initiatives in execution as the darkest diamonds.
 
 ## Architecture
 
@@ -130,11 +131,12 @@ Environment variables are used only for infrastructure and identity: `DV_DB_PATH
 ### Database (DuckDB)
 
 * **File**: `DV_DB_PATH`, default `digitalvalue.duckdb`.
+* **Schema changes**: columns added after the first release are created in place when the app starts (`db_migrate()`), so existing databases keep working.
 * **Tables**:
   * `initiatives`, `rice`
   * `m4_lines`: 4M calculation lines
   * `reviews`: expert reviews with their 4M figures
-  * `audits`: actual 4M figures and adoption
+  * `audits`: actual 4M figures, actual cost and adoption
   * `value_models`: published model versions
   * `status_history`, `event_log`
 * **Migration to an enterprise database**: only `R/data_db.R` changes. Add a driver branch in `db_connect()` (e.g. `odbc::odbc()`). The SQL is ANSI with `?` placeholders (`sql_params()` rewrites them for PostgreSQL), and timestamps are ISO-8601 UTC text.

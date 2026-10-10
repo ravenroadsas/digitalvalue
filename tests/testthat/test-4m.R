@@ -82,3 +82,39 @@ test_that("4M figures implied by calculation lines keep the reserve category", {
   expect_equal(v$category, "3P")
   expect_equal(m4_from_lines(db_get_m4_lines(con, "none"))$category, "2P")
 })
+
+test_that("cost metric C is tracked but never added to value", {
+  cfg <- test_cfg()
+  expect_equal(m4_metrics()$kind[m4_metrics()$metric == "C"], "cost")
+  r <- m4_calculate("c_effort", list(person_months = 10, rate_kusd_pm = 20, licences_kusd = 100), cfg)
+  expect_equal(r$metric, "C")
+  expect_equal(r$value, 0.3)
+  expect_equal(r$value_mm_usd, 0.3)
+  d <- m4_calculate("c_direct", list(capex_mm_usd = 1, opex_mm_usd_yr = 0.2, years = 3), cfg)
+  expect_equal(d$value, 1.6)
+  v <- m4_value(list(M = 2, C = 0.5), cfg)
+  expect_equal(v$total, 2)
+  expect_equal(v$cost, 0.5)
+  expect_equal(v$value_to_cost, 4)
+  expect_true(is.na(m4_value(list(M = 2), cfg)$value_to_cost))
+  expect_setequal(names(m4_method_choices("C", cfg)), c(
+    "Capex + opex over the evaluation period", "Effort (person-months) \u00d7 rate + licences"))
+})
+
+test_that("cost lines do not count as a valuation and feed the planned cost", {
+  cfg <- test_cfg()
+  con <- test_con()
+  id <- reg(con, cfg, effort = "L", cost = 0.4)
+  db_add_m4_line(con, id, m4_calculate("c_direct", list(capex_mm_usd = 2, opex_mm_usd_yr = 0), cfg))
+  pf <- compute_portfolio(db_portfolio(con), cfg)
+  expect_equal(pf$plan_c, 2)
+  expect_equal(pf$plan_value_mm_usd, 0)
+  expect_false(pf$has_valuation)
+  expect_equal(pf$planned_cost_mm_usd, 2)   # 4M cost overrides the registration cost
+  expect_true(pf$req_review)                # cost 2 >= review gate 1
+  db_add_m4_line(con, id, m4_calculate("m_direct", list(mm_usd = 1), cfg))
+  pf <- compute_portfolio(db_portfolio(con), cfg)
+  expect_equal(pf$plan_value_mm_usd, 1)
+  expect_true(pf$has_valuation)
+  expect_equal(m4_from_lines(db_get_m4_lines(con, id))$C, 2)
+})

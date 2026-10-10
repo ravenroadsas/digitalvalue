@@ -10,7 +10,7 @@ mod_valuation_ui <- function(id) {
         htmltools::div(class = "dv-section", "Calculator"),
         shiny::radioButtons(ns("metric"), "Metric", inline = TRUE,
           choices = c("P \u00b7 Production" = "P", "R \u00b7 Reserves" = "R",
-                      "M \u00b7 Monetary" = "M", "T \u00b7 Time" = "T")),
+                      "M \u00b7 Monetary" = "M", "T \u00b7 Time" = "T", "C \u00b7 Cost" = "C")),
         shiny::selectInput(ns("method"), "Calculation method", choices = NULL, selectize = FALSE,
                            width = "100%"),
         shiny::uiOutput(ns("params")),

@@ -32,14 +32,19 @@ test_that("portfolio KPIs on demo data", {
 test_that("4M lifecycle compares estimate, review and audit", {
   cfg <- test_cfg()
   lines <- data.frame(metric = "P", result_value = 10, value_mm_usd = m4_monetize("P", 10, cfg))
-  rv <- data.frame(p_bopd = 8, r_mmbbl = 0, r_category = "2P", m_mm_usd = 0.5, t_khours = 0)
-  au <- data.frame(p_bopd = 6, r_mmbbl = 0, r_category = "2P", m_mm_usd = 0.25, t_khours = 0)
+  rv <- data.frame(p_bopd = 8, r_mmbbl = 0, r_category = "2P", m_mm_usd = 0.5, t_khours = 0,
+                   cost_mm_usd = 1)
+  au <- data.frame(p_bopd = 6, r_mmbbl = 0, r_category = "2P", m_mm_usd = 0.25, t_khours = 0,
+                   c_mm_usd = 1.2)
   lc <- m4_lifecycle(lines, rv, au, cfg)
   expect_equal(lc$estimate[lc$metric == "P"], 10)
   expect_equal(lc$review[lc$metric == "P"], 8)
   expect_equal(lc$actual[lc$metric == "M"], 0.25)
   expect_equal(lc$realization_pct[lc$metric == "P"], 75)
   expect_equal(lc$realization_pct[lc$metric == "M"], 50)
+  expect_equal(lc$review[lc$metric == "C"], 1)
+  expect_equal(lc$actual[lc$metric == "C"], 1.2)
+  expect_equal(lc$realization_pct[lc$metric == "C"], 120)
   only <- m4_lifecycle(lines, NULL, NULL, cfg)
   expect_true(all(is.na(only$review)))
 })

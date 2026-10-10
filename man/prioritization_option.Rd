@@ -7,7 +7,7 @@
 prioritization_option(
   pf,
   cfg,
-  y = c("score", "value", "estimate"),
+  y = c("rice_value", "value", "estimate"),
   highlight = NULL,
   estimate = NULL
 )
@@ -17,8 +17,10 @@ prioritization_option(
 
 \item{cfg}{Configuration list.}
 
-\item{y}{\code{"score"} (RICE), \code{"value"} (planned mm USD) or \code{"estimate"}
-(planned mm USD, or the value-model estimate when not yet valued).}
+\item{y}{\code{"rice_value"} (reach x impact x confidence, i.e. RICE without the
+effort divisor, so the chart reads as value vs effort), \code{"value"} (ex-ante
+mm USD) or \code{"estimate"} (ex-ante mm USD, or the value-model estimate when
+not yet valued).}
 
 \item{highlight}{Optional selected initiative id (drawn with a ring).}
 

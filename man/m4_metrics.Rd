@@ -7,8 +7,9 @@
 m4_metrics()
 }
 \value{
-Data frame with \code{metric}, \code{label}, \code{unit}.
+Data frame with \code{metric}, \code{label}, \code{unit}, \code{kind} (\code{"value"}/\code{"cost"}).
 }
 \description{
-4M metric definitions
+Four value metrics (P, R, M, T) plus the cost metric C. Cost is tracked
+alongside value but never added to it: value totals use P, R, M, T only.
 }

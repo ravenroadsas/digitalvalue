@@ -61,27 +61,35 @@ mod_audit_server <- function(id, state) {
       au <- audits(); rv <- reviews()
       if (nrow(au)) {
         update_m4_inputs(session, list(P = au$p_bopd[1], R = au$r_mmbbl[1], M = au$m_mm_usd[1],
-                                       T = au$t_khours[1], category = au$r_category[1]))
+                                       T = au$t_khours[1], C = au$c_mm_usd[1],
+                                       category = au$r_category[1]))
         shiny::updateSliderInput(session, "adoption", value = au$adoption_pct[1])
       } else if (nrow(rv)) {
         update_m4_inputs(session, list(P = rv$p_bopd[1], R = rv$r_mmbbl[1], M = rv$m_mm_usd[1],
-                                       T = rv$t_khours[1], category = rv$r_category[1]))
+                                       T = rv$t_khours[1], C = rv$cost_mm_usd[1],
+                                       category = rv$r_category[1]))
       } else {
-        update_m4_inputs(session, m4_from_lines(lines()))
+        v <- m4_from_lines(lines())
+        v$C <- state$row()$planned_cost_mm_usd
+        update_m4_inputs(session, v)
       }
     })
 
     values <- shiny::reactive(list(P = input$P, R = input$R, M = input$M, T = input$T,
-                                   category = input$category))
+                                   C = input$C, category = input$category))
     output$preview <- shiny::renderUI({
       r <- state$row()
       if (is.null(r)) return(NULL)
-      v <- m4_value(values(), cfg)$total
+      m <- m4_value(values(), cfg)
+      v <- m$total
       htmltools::div(class = "dv-estimate",
         htmltools::div(class = "dv-estimate-label", "Audited value"),
         htmltools::div(class = "dv-estimate-value", sprintf("%s mm USD", fmt_num(v, 2)),
           htmltools::span(sprintf("%s of the ex-ante value",
-                                  fmt_num(realization_pct(v, r$planned_value_mm_usd), 0, "%")))))
+                                  fmt_num(realization_pct(v, r$planned_value_mm_usd), 0, "%")))),
+        htmltools::div(class = "dv-muted", sprintf("Actual cost %s mm USD (%s of planned %s) \u00b7 value/cost %s",
+          fmt_num(m$cost, 2), fmt_num(realization_pct(m$cost, r$planned_cost_mm_usd), 0, "%"),
+          fmt_num(r$planned_cost_mm_usd, 2), fmt_num(m$value_to_cost, 1, "x"))))
     })
     output$locked <- shiny::renderUI({
       r <- state$row()

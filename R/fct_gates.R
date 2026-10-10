@@ -104,7 +104,9 @@ derive_status <- function(current, has_rice, req_val, has_valuation, req_rev, re
 #' Enrich the portfolio with gates, readiness and derived status
 #'
 #' The ex-ante value (`planned_value_mm_usd`) is the expert-review value when
-#' the review approved the initiative, otherwise the 4M estimate.
+#' the review approved the initiative, otherwise the 4M estimate (P, R, M, T).
+#' The ex-ante cost (`planned_cost_mm_usd`) is the approved review cost, else
+#' the 4M cost estimate (metric C), else the cost entered at registration.
 #' @param portfolio Output of [db_portfolio()].
 #' @param cfg Configuration list.
 #' @return Data frame with extra columns `planned_value_mm_usd`,
@@ -116,8 +118,9 @@ compute_portfolio <- function(portfolio, cfg) {
   approved <- !is.na(df$review_decision) & df$review_decision == "Approve"
   df$planned_value_mm_usd <- ifelse(approved & !is.na(df$review_value_mm_usd),
                                     df$review_value_mm_usd, df$plan_value_mm_usd)
-  df$planned_cost_mm_usd <- ifelse(approved & !is.na(df$review_cost_mm_usd),
-                                   df$review_cost_mm_usd, df$cost_mm_usd)
+  # cost: approved review (C) > 4M cost estimate (C lines) > cost entered at registration
+  df$planned_cost_mm_usd <- ifelse(approved & !is.na(df$review_cost_mm_usd), df$review_cost_mm_usd,
+                            ifelse(!is.na(df$plan_c) & df$plan_c > 0, df$plan_c, df$cost_mm_usd))
   df$has_rice <- !is.na(df$score)
   df$has_valuation <- df$plan_lines > 0
   df$req_valuation <- requires_valuation(df$effort, df$score, cfg)

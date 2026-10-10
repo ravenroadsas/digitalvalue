@@ -8,12 +8,14 @@ m4_value(values, cfg)
 }
 \arguments{
 \item{values}{Named list \code{P} (BOPD), \code{R} (MMbbl), \code{category} (reserve
-category), \code{M} (mm USD), \code{T} (khours). Missing figures count as zero.}
+category), \code{M} (mm USD), \code{T} (khours), \code{C} (cost, mm USD). Missing
+figures count as zero.}
 
 \item{cfg}{Configuration list.}
 }
 \value{
-List with \code{by_metric} (named mm USD vector) and \code{total}.
+List with \code{by_metric} (named mm USD vector, P/R/M/T/C), \code{total}
+(value: P + R + M + T), \code{cost} (C) and \code{value_to_cost}.
 }
 \description{
 Monetary value of a set of 4M figures (expert review, audit)

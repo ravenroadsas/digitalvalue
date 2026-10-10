@@ -9,14 +9,22 @@
 # a human-readable trace) and is monetised with the configuration parameters.
 
 #' 4M metric definitions
-#' @return Data frame with `metric`, `label`, `unit`.
+#'
+#' Four value metrics (P, R, M, T) plus the cost metric C. Cost is tracked
+#' alongside value but never added to it: value totals use P, R, M, T only.
+#' @return Data frame with `metric`, `label`, `unit`, `kind` (`"value"`/`"cost"`).
 #' @export
 m4_metrics <- function() {
-  data.frame(metric = c("P", "R", "M", "T"),
-             label = c("Production", "Reserves", "Monetary", "Time saved"),
-             unit = c("BOPD", "MMbbl", "mm USD", "khours"),
+  data.frame(metric = c("P", "R", "M", "T", "C"),
+             label = c("Production", "Reserves", "Monetary", "Time saved", "Cost"),
+             unit = c("BOPD", "MMbbl", "mm USD", "khours", "mm USD"),
+             kind = c(rep("value", 4), "cost"),
              stringsAsFactors = FALSE)
 }
+
+#' Codes of the value metrics (excluding cost)
+#' @export
+m4_value_metrics <- c("P", "R", "M", "T")
 
 num_param <- function(name, label, default, unit = "") {
   list(name = name, label = label, default = default, unit = unit, type = "numeric")
@@ -148,6 +156,29 @@ m4_methods <- function(cfg) {
           fmt(p$tasks_year), " tasks", x_, fmt(p$minutes_saved), " min / 60 / 1000 = ",
           fmt(v), " khours/yr"))
       })
+,
+    c_direct = list(
+      metric = "C", label = "Capex + opex over the evaluation period",
+      params = list(num_param("capex_mm_usd", "Capex (one-off)", 0.5, "mm USD"),
+                    num_param("opex_mm_usd_yr", "Opex (run cost)", 0.1, "mm USD/yr"),
+                    num_param("years", "Years of opex counted", 1, "yr")),
+      fun = function(p) {
+        v <- p$capex_mm_usd + p$opex_mm_usd_yr * p$years
+        list(value = v, formula_text = paste0(
+          fmt(p$capex_mm_usd, 3), " capex + ", fmt(p$opex_mm_usd_yr, 3), " opex", x_,
+          fmt(p$years), " yr = ", fmt(v, 3), " mm USD"))
+      }),
+    c_effort = list(
+      metric = "C", label = "Effort (person-months) \u00d7 rate + licences",
+      params = list(num_param("person_months", "Effort", 12, "person-months"),
+                    num_param("rate_kusd_pm", "Cost per person-month", 15, "k USD"),
+                    num_param("licences_kusd", "Licences / services", 50, "k USD")),
+      fun = function(p) {
+        v <- (p$person_months * p$rate_kusd_pm + p$licences_kusd) / 1000
+        list(value = v, formula_text = paste0(
+          "(", fmt(p$person_months), " pm", x_, fmt(p$rate_kusd_pm), " kUSD + ",
+          fmt(p$licences_kusd), " kUSD) / 1000 = ", fmt(v, 3), " mm USD"))
+      })
   )
   for (k in names(m)) m[[k]]$id <- k
   m
@@ -181,6 +212,7 @@ time_value_usd_hour <- function(cfg) {
 #' * R: MMbbl x value per barrel of the category (one-off)
 #' * M: as is (annual)
 #' * T: khours x 1000 x salary/h x productivity coefficient (annual)
+#' * C: cost, as is (mm USD; never added to the value total)
 #'
 #' @param metric Metric code.
 #' @param value Metric value in its native unit.
@@ -199,6 +231,7 @@ m4_monetize <- function(metric, value, cfg, category = NULL) {
     },
     M = value,
     T = value * 1000 * time_value_usd_hour(cfg) / 1e6,
+    C = value,
     stop("Unknown 4M metric: ", metric)
   )
 }
@@ -230,7 +263,8 @@ m4_calculate <- function(method, params, cfg) {
   mm <- m4_monetize(m$metric, res$value, cfg, p$category)
   list(method = method, metric = m$metric, params = p, value = res$value,
        unit = unit, value_mm_usd = mm,
-       formula_text = paste0(res$formula_text, " \u2192 ", fmt(mm, 3), " mm USD"))
+       formula_text = if (m$metric == "C") res$formula_text   # already in mm USD
+                      else paste0(res$formula_text, " \u2192 ", fmt(mm, 3), " mm USD"))
 }
 
 #' Summarise 4M lines by metric
@@ -253,15 +287,22 @@ m4_summary <- function(lines) {
 #' Monetary value of a set of 4M figures (expert review, audit)
 #'
 #' @param values Named list `P` (BOPD), `R` (MMbbl), `category` (reserve
-#'   category), `M` (mm USD), `T` (khours). Missing figures count as zero.
+#'   category), `M` (mm USD), `T` (khours), `C` (cost, mm USD). Missing
+#'   figures count as zero.
 #' @param cfg Configuration list.
-#' @return List with `by_metric` (named mm USD vector) and `total`.
+#' @return List with `by_metric` (named mm USD vector, P/R/M/T/C), `total`
+#'   (value: P + R + M + T), `cost` (C) and `value_to_cost`.
 #' @export
 m4_value <- function(values, cfg) {
-  g <- function(k) { v <- suppressWarnings(as.numeric(values[[k]] %||% 0)); if (is.na(v)) 0 else v }
+  g <- function(k) {
+    v <- suppressWarnings(as.numeric(values[[k]] %||% 0))
+    if (!length(v) || is.na(v)) 0 else v
+  }
   cat <- values$category %||% names(reserve_values(cfg))[1]
   if (is.na(cat)) cat <- names(reserve_values(cfg))[1]
   mm <- c(P = m4_monetize("P", g("P"), cfg), R = m4_monetize("R", g("R"), cfg, cat),
-          M = m4_monetize("M", g("M"), cfg), T = m4_monetize("T", g("T"), cfg))
-  list(by_metric = mm, total = sum(mm))
+          M = m4_monetize("M", g("M"), cfg), T = m4_monetize("T", g("T"), cfg), C = g("C"))
+  total <- sum(mm[m4_value_metrics])
+  list(by_metric = mm, total = total, cost = mm[["C"]],
+       value_to_cost = if (mm[["C"]] > 0) total / mm[["C"]] else NA_real_)
 }

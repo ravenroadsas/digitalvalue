@@ -7,7 +7,7 @@ mod_audit_ui <- function(id) {
     shiny::uiOutput(ns("status")),
     shiny::uiOutput(ns("tiles")),
     bslib::layout_columns(col_widths = c(5, 7),
-      box("Value audit \u00b7 actual 4M and adoption", class = "dv-step-card",
+      box("Value audit \u00b7 actual 4M, cost and adoption", class = "dv-step-card",
         htmltools::div(id = ns("form"),
           m4_inputs(ns),
           shiny::sliderInput(ns("adoption"), "Adoption (% of intended users actively using it)",
