@@ -36,6 +36,26 @@ mod_portfolio_server <- function(id, state) {
     })
     output$status <- echarts4r::renderEcharts4r(echart_from_option(status_option(state$portfolio())))
 
+    gaps <- shiny::reactive(evaluation_gaps(state$portfolio()))
+    output$gaps <- shiny::renderUI({
+      g <- gaps()
+      box_for <- function(col, title, what) {
+        sel <- g[[col]] == "missing"
+        if (!any(sel)) return(NULL)
+        callout(type = "gate", title = sprintf("%s missing \u00b7 %d", title, sum(sel)),
+          htmltools::div(what),
+          htmltools::tags$ul(lapply(which(sel), function(i)
+            htmltools::tags$li(htmltools::span(class = "dv-gap-id", g$id[i]), " \u00b7 ", g$name[i]))))
+      }
+      boxes <- list(
+        box_for("valuation", "4M valuation", "Above the valuation gate, no 4M valuation recorded:"),
+        box_for("review", "Expert review", "Above the review gate, no expert review decision:"),
+        box_for("audit", "Value audit", "Execution closed, realised value not audited:"))
+      boxes <- Filter(Negate(is.null), boxes)
+      if (!length(boxes)) return(callout(type = "low", "All required evaluations are recorded."))
+      htmltools::div(class = "dv-gaps", boxes)
+    })
+
     alerts <- shiny::reactive(assessment_alerts(state$portfolio()))
     output$alerts <- DT::renderDT({
       a <- alerts()
@@ -49,8 +69,9 @@ mod_portfolio_server <- function(id, state) {
     })
 
     table_data <- shiny::reactive({
-      pf <- state$portfolio(); est <- estimates()
+      pf <- state$portfolio(); est <- estimates(); g <- gaps()
       data.frame(ID = pf$id, Initiative = pf$name, Unit = pf$business_unit, Status = pf$status,
+                 `4M` = g$valuation, Review = g$review, Audit = g$audit,
                  RICE = round(pf$score, 2), Rank = pf$rice_rank, Effort = pf$effort,
                  `Est. mm$` = round(est$predicted, 2),
                  `Ex-ante mm$` = ifelse(pf$planned_value_mm_usd > 0, round(pf$planned_value_mm_usd, 2), NA),
@@ -64,7 +85,11 @@ mod_portfolio_server <- function(id, state) {
       dt_compact(table_data(), page_length = 12, dom = "ftp") |>
         DT::formatStyle("Status", fontWeight = "600",
                         backgroundColor = DT::styleEqual(names(cols), unname(cols)),
-                        color = DT::styleEqual(names(cols), unname(text)))
+                        color = DT::styleEqual(names(cols), unname(text))) |>
+        DT::formatStyle(c("4M", "Review", "Audit"),
+                        backgroundColor = DT::styleEqual("missing", "#FFE7B0"),
+                        color = DT::styleEqual(c("missing", "done", "n/a"), c("#7A4A00", mono$c900, mono$c300)),
+                        fontWeight = DT::styleEqual("missing", "600"))
     })
     shiny::observeEvent(input$table_rows_selected, {
       state$open(table_data()$ID[input$table_rows_selected])

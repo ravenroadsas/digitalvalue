@@ -85,6 +85,9 @@ Two log-linear regressions chain the lifecycle (`R/fct_value_model.R`):
 
 ### Alerts and KPIs
 
+* **Missing evaluations** are the only thing shown in colour (amber):
+  * **Initiative tab:** the "next stage required" callouts. Registration & RICE shows whether a 4M valuation is needed; the 4M valuation card shows whether an expert review is needed. Pending required steps are tagged in amber.
+  * **Portfolio tab:** one callout per missing evaluation type (4M valuation, expert review, value audit), listing the initiatives concerned, plus amber "missing" cells in the register's 4M / Review / Audit columns.
 * **Alerts** list initiatives above a gate with a pending step, closed initiatives without an audit, and initiatives ready for a decision. Clicking an alert opens the initiative on the right view.
 * **Portfolio KPIs**: pipeline, committed and realised value; value/cost; realisation rate (audited ÷ ex-ante); mean adoption; gate compliance (share of required 4M valuations and reviews actually done); decision lead time; open alerts.
 * **Prioritisation chart** (value vs effort, bubble size = reach): single-hue palette, with prioritized initiatives as dark circles and initiatives in execution as the darkest diamonds.

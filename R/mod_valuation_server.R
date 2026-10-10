@@ -18,7 +18,9 @@ mod_valuation_server <- function(id, state) {
     output$tag <- shiny::renderUI({
       r <- state$row()
       if (is.null(r)) return(NULL)
-      htmltools::span(class = "dv-tag", if (r$req_valuation) "required" else "optional")
+      pending <- r$req_valuation && !r$has_valuation
+      htmltools::span(class = paste("dv-tag", if (pending) "dv-tag-gate"),
+                      if (pending) "required \u00b7 pending" else if (r$req_valuation) "required" else "optional")
     })
 
     output$gate <- shiny::renderUI({
@@ -26,9 +28,12 @@ mod_valuation_server <- function(id, state) {
       if (is.null(r)) return(callout(type = "info", "Register the initiative first."))
       gr <- gate_reasons(r, cfg)
       htmltools::tagList(
-        if (r$req_valuation) callout(type = "medium", title = "Above the valuation gate",
-                                     paste(gr$valuation, collapse = " \u00b7 "))
-        else callout(type = "low", "Below the valuation gate \u2013 a 4M valuation is optional."),
+        # requirement of the next stage, driven by the 4M value and the cost
+        if (r$req_review) callout(type = "gate", title = "Next stage required \u00b7 expert review",
+                                  paste(gr$review, collapse = " \u00b7 "))
+        else callout(type = "low", sprintf(
+          "Below the review gate (value < %s mm USD and cost < %s mm USD) \u2013 expert review not required.",
+          cfg$params$gate3_value_min_mm_usd, cfg$params$gate3_cost_min_mm_usd)),
         if (!state$can("valuate")) callout(type = "info", "4M valuation is recorded by superusers.")
         else if (!editable()) callout(type = "info", "Valuation is locked after the decision."))
     })

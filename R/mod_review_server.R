@@ -19,16 +19,14 @@ mod_review_server <- function(id, state) {
     output$tag <- shiny::renderUI({
       r <- state$row()
       if (is.null(r)) return(NULL)
-      htmltools::span(class = "dv-tag", if (r$req_review) "required" else "not required")
+      pending <- r$status == "Expert review"
+      htmltools::span(class = paste("dv-tag", if (pending) "dv-tag-gate"),
+                      if (pending) "required \u00b7 pending" else if (r$req_review) "required" else "not required")
     })
     output$gate <- shiny::renderUI({
       r <- state$row()
       if (is.null(r)) return(NULL)
-      gr <- gate_reasons(r, cfg)
       htmltools::tagList(
-        if (r$req_review) callout(type = "high", title = "Above the review gate",
-                                  paste(gr$review, collapse = " \u00b7 "))
-        else callout(type = "low", "Below the review gate \u2013 an expert review can still be recorded."),
         if (!state$can("review")) callout(type = "info", "Expert reviews are recorded by superusers."))
     })
 

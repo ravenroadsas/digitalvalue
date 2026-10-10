@@ -223,3 +223,27 @@ sync_status <- function(con, cfg, user = "system") {
   }
   chg$id
 }
+
+#' Evaluation coverage per initiative: done, missing or not applicable
+#'
+#' An evaluation is *missing* when the gates require it and it has not been
+#' recorded: a 4M valuation above the valuation gate, an expert review above
+#' the review gate (a "Rework" decision is still pending), a value audit after
+#' closure. Rejected initiatives have nothing missing.
+#' @param pf Output of [compute_portfolio()].
+#' @return Data frame `id`, `name`, `valuation`, `review`, `audit` with values
+#'   `"done"`, `"missing"` or `"n/a"`, and `n_missing`.
+#' @export
+evaluation_gaps <- function(pf) {
+  live <- pf$status != "Rejected"
+  reviewed <- !is.na(pf$review_decision) & pf$review_decision %in% c("Approve", "Reject")
+  state <- function(done, required) ifelse(done, "done", ifelse(required & live, "missing", "n/a"))
+  out <- data.frame(
+    id = pf$id, name = pf$name,
+    valuation = state(pf$has_valuation, pf$req_valuation),
+    review = state(reviewed, pf$req_review),
+    audit = state(pf$status == "Audited", pf$status == "Closed"),
+    stringsAsFactors = FALSE)
+  out$n_missing <- rowSums(out[, c("valuation", "review", "audit")] == "missing")
+  out
+}

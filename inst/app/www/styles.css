@@ -120,3 +120,13 @@ table.dataTable tbody tr.selected > * { box-shadow: inset 0 0 0 9999px var(--c70
 .dataTables_wrapper .dataTables_filter label { font-size: 10.5px; }
 .dataTables_wrapper .dataTables_filter input { font-size: 11px; padding: 1px 4px; }
 .dv-score { font-size: 20px; font-weight: 600; color: var(--c900); line-height: 1.2; }
+
+/* The only accent colour: pending evaluations / next stage required (amber) */
+:root { --gate-bg: #FFF4DC; --gate-line: #E39B23; --gate-ink: #7A4A00; --gate-cell: #FFE7B0; }
+.dv-callout-gate { background: var(--gate-bg); border-color: #F3D49A; border-left: 4px solid var(--gate-line); }
+.dv-callout-gate .dv-callout-title { color: var(--gate-ink); }
+.dv-callout-gate .dv-callout-body { color: #4D3200; }
+.dv-gaps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; margin-bottom: 4px; }
+.dv-gaps .dv-callout { margin-bottom: 8px; }
+.dv-gap-id { font-weight: 600; }
+.dv-tag-gate { background: var(--gate-bg); border-color: var(--gate-line); color: var(--gate-ink); }

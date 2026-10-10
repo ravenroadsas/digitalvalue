@@ -5,6 +5,7 @@ mod_portfolio_ui <- function(id) {
   ns <- shiny::NS(id)
   htmltools::tagList(
     shiny::uiOutput(ns("kpis")),
+    shiny::uiOutput(ns("gaps")),
     bslib::layout_columns(col_widths = c(7, 5),
       box("Prioritisation \u00b7 value vs effort",
           right = shiny::radioButtons(ns("y_axis"), NULL, inline = TRUE,
@@ -20,7 +21,8 @@ mod_portfolio_ui <- function(id) {
           htmltools::div(class = "dv-muted", "Click a row to open the initiative on the pending step."),
           DT::DTOutput(ns("alerts"))),
       box("Portfolio register",
-          htmltools::div(class = "dv-muted", "Click a row to open the initiative."),
+          htmltools::div(class = "dv-muted",
+            "Click a row to open the initiative. Amber cells = evaluation required but missing."),
           DT::DTOutput(ns("table"))))
   )
 }
