@@ -14,7 +14,7 @@ db_add_initiative(
   start_date = NA,
   end_date = NA,
   user = "unknown",
-  status = "Registered",
+  status = "Recorded",
   time = Sys.time()
 )
 }

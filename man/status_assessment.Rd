@@ -7,11 +7,11 @@
 \alias{status_all}
 \title{Initiative statuses}
 \format{
+An object of class \code{character} of length 2.
+
+An object of class \code{character} of length 2.
+
 An object of class \code{character} of length 4.
-
-An object of class \code{character} of length 5.
-
-An object of class \code{character} of length 9.
 }
 \usage{
 status_assessment
@@ -21,7 +21,7 @@ status_decision
 status_all
 }
 \description{
-Appraisal statuses are derived from the data (what is still pending);
-decision statuses are set explicitly by a workflow action.
+\code{Recorded} and \code{Evaluated} are derived from the data (are the required
+evaluations complete?); \code{Delivered} and \code{Audited} are set by an action.
 }
 \keyword{datasets}

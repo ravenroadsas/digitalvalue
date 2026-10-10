@@ -8,7 +8,12 @@ app_server <- function(input, output, session) {
 
   version <- shiny::reactiveVal(0)
   selected <- shiny::reactiveVal(NULL)
-  stage <- shiny::reactiveVal("appraisal")
+  stage <- shiny::reactiveVal("evaluation")
+
+  # changes made by other users (other sessions) are picked up every few seconds
+  shared <- shiny::reactivePoll(5000, session, checkFunc = function() db_change_stamp(con),
+                                valueFunc = function() Sys.time())
+  shiny::observeEvent(shared(), version(shiny::isolate(version()) + 1), ignoreInit = TRUE)
 
   portfolio <- shiny::reactive({
     version()
@@ -27,7 +32,9 @@ app_server <- function(input, output, session) {
 
   state <- list(
     con = con, cfg = cfg, user = usr,
-    can = function(action) can(usr, action),
+    can = function(action, row = NULL) can(usr, action, row),
+    # Posit Connect user directory (owners, validators), cached for an hour
+    users = shiny::reactive(user_directory()),
     portfolio = portfolio, history = history, models = models,
     selected = selected, stage = stage, version = version,
     # call after every write: re-derives statuses and refreshes all views

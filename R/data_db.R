@@ -83,6 +83,13 @@ db_schema <- c(
     type VARCHAR, n INTEGER, r2 DOUBLE, adj_r2 DOUBLE, sigma DOUBLE,
     df_residual INTEGER, level DOUBLE, terms_json VARCHAR, coef_json VARCHAR,
     vcov_json VARCHAR, comment VARCHAR, created_by VARCHAR, created_at VARCHAR)",
+  validations = "CREATE TABLE IF NOT EXISTS validations (
+    validation_id VARCHAR PRIMARY KEY, initiative_id VARCHAR NOT NULL,
+    validator VARCHAR NOT NULL, status VARCHAR NOT NULL, requested_by VARCHAR,
+    requested_at VARCHAR, request_comment VARCHAR, decided_by VARCHAR,
+    decided_at VARCHAR, decision_comment VARCHAR)",
+  schema_migrations = "CREATE TABLE IF NOT EXISTS schema_migrations (
+    migration_id VARCHAR PRIMARY KEY, applied_at VARCHAR)",
   status_history = "CREATE TABLE IF NOT EXISTS status_history (
     initiative_id VARCHAR NOT NULL, from_status VARCHAR, to_status VARCHAR,
     changed_by VARCHAR, changed_at VARCHAR, comment VARCHAR)",
@@ -106,11 +113,25 @@ db_migrations <- list(
   list(table = "audits", column = "c_mm_usd", type = "DOUBLE")
 )
 
-# Renamed values (idempotent): the "4M valuation" status became "4MC valuation".
-db_value_migrations <- c(
-  "UPDATE initiatives SET status = '4MC valuation' WHERE status = '4M valuation'",
-  "UPDATE status_history SET to_status = '4MC valuation' WHERE to_status = '4M valuation'",
-  "UPDATE status_history SET from_status = '4MC valuation' WHERE from_status = '4M valuation'"
+# Data migrations, applied once per database (recorded in schema_migrations).
+db_data_migrations <- list(
+  "2026-10-rename-4mc" = c(
+    "UPDATE initiatives SET status = '4MC valuation' WHERE status = '4M valuation'"),
+  # simplified lifecycle: Recorded -> Evaluated -> Delivered -> Audited
+  "2026-10-simplified-lifecycle" = c(
+    "UPDATE initiatives SET status = 'Evaluated' WHERE status IN ('Prioritized', 'In execution', 'Ready')",
+    "UPDATE initiatives SET status = 'Delivered' WHERE status = 'Closed'",
+    "UPDATE initiatives SET status = 'Recorded'
+       WHERE status IN ('Registered', '4M valuation', '4MC valuation', 'Expert review', 'Rejected')"),
+  # 4MC valuations recorded before the validation workflow count as validated
+  "2026-10-legacy-validations" = c(
+    "INSERT INTO validations (validation_id, initiative_id, validator, status, requested_by,
+       requested_at, request_comment, decided_by, decided_at, decision_comment)
+     SELECT 'V-legacy-' || i.id, i.id, 'legacy', 'validated', 'legacy', i.updated_at,
+       'Recorded before the validation workflow', 'legacy', i.updated_at, 'Validated by migration'
+     FROM initiatives i
+     WHERE EXISTS (SELECT 1 FROM m4_lines l WHERE l.initiative_id = i.id)
+       AND NOT EXISTS (SELECT 1 FROM validations v WHERE v.initiative_id = i.id)")
 )
 
 db_migrate <- function(con) {
@@ -119,7 +140,14 @@ db_migrate <- function(con) {
       DBI::dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN %s %s", m$table, m$column, m$type))
     }
   }
-  for (sql in db_value_migrations) DBI::dbExecute(con, sql)
+  done <- db_query(con, "SELECT migration_id FROM schema_migrations")$migration_id
+  for (k in setdiff(names(db_data_migrations), done)) {
+    DBI::dbWithTransaction(con, {
+      for (sql in db_data_migrations[[k]]) DBI::dbExecute(con, sql)
+      DBI::dbAppendTable(con, "schema_migrations",
+                         data.frame(migration_id = k, applied_at = now_utc(), stringsAsFactors = FALSE))
+    })
+  }
   invisible(TRUE)
 }
 
@@ -188,7 +216,7 @@ db_next_initiative_id <- function(con) {
 db_add_initiative <- function(con, name, description = NA, owner = NA,
                               business_unit = NA, cost_mm_usd = NA,
                               start_date = NA, end_date = NA, user = "unknown",
-                              status = "Registered", time = Sys.time()) {
+                              status = "Recorded", time = Sys.time()) {
   if (!nzchar(trimws(na_chr(name)) %||% "")) stop("Initiative name is required")
   id <- db_next_initiative_id(con)
   ts <- now_utc(time)
@@ -516,6 +544,70 @@ db_active_value_model <- function(con, kind) {
   record_from_row(row[1, ])
 }
 
+# 4MC validation -------------------------------------------------------------------
+
+#' Send the 4MC valuation of an initiative to a validator
+#'
+#' Any pending request of the initiative is superseded by the new one.
+#' @param con A DBI connection.
+#' @param id Initiative id.
+#' @param validator User name of the validator (Posit Connect user).
+#' @param user User sending the request.
+#' @param comment Optional note to the validator.
+#' @param time Request time.
+#' @return The validation id.
+#' @export
+db_request_validation <- function(con, id, validator, user = "unknown", comment = NA,
+                                  time = Sys.time()) {
+  if (is.null(validator) || !length(validator) || is.na(validator) || !nzchar(validator))
+    stop("A validator is required")
+  vid <- new_uid("V")
+  DBI::dbWithTransaction(con, {
+    db_exec(con, "UPDATE validations SET status = 'superseded' WHERE initiative_id = ? AND status = 'pending'",
+            list(id))
+    DBI::dbAppendTable(con, "validations", data.frame(
+      validation_id = vid, initiative_id = id, validator = validator, status = "pending",
+      requested_by = user, requested_at = now_utc(time), request_comment = na_chr(comment),
+      decided_by = NA_character_, decided_at = NA_character_, decision_comment = NA_character_,
+      stringsAsFactors = FALSE))
+  })
+  vid
+}
+
+#' Record the validator's decision
+#' @param con A DBI connection.
+#' @param validation_id Validation id.
+#' @param decision `"validated"` or `"changes_requested"`.
+#' @param user User deciding.
+#' @param comment Comment (expected when changes are requested).
+#' @param time Decision time.
+#' @export
+db_decide_validation <- function(con, validation_id, decision = c("validated", "changes_requested"),
+                                 user = "unknown", comment = NA, time = Sys.time()) {
+  decision <- match.arg(decision)
+  n <- db_exec(con, "UPDATE validations SET status = ?, decided_by = ?, decided_at = ?, decision_comment = ?
+                     WHERE validation_id = ? AND status = 'pending'",
+               list(decision, user, now_utc(time), na_chr(comment), validation_id))
+  if (n != 1) stop("No pending validation ", validation_id)
+  invisible(TRUE)
+}
+
+#' Read validations
+#' @param con A DBI connection.
+#' @param id Optional initiative id.
+#' @param validator Optional validator user name (pending requests addressed to them).
+#' @return Data frame, newest first.
+#' @export
+db_get_validations <- function(con, id = NULL, validator = NULL) {
+  if (!is.null(validator)) {
+    return(db_query(con, "SELECT * FROM validations WHERE validator = ? AND status = 'pending'
+                          ORDER BY requested_at DESC", list(validator)))
+  }
+  if (is.null(id)) db_query(con, "SELECT * FROM validations ORDER BY requested_at DESC, validation_id DESC")
+  else db_query(con, "SELECT * FROM validations WHERE initiative_id = ? ORDER BY requested_at DESC, validation_id DESC",
+                list(id))
+}
+
 # Portfolio view (aggregation pushed to the database) ---------------------------
 
 #' Portfolio: one row per initiative with RICE, 4MC totals, review and audit
@@ -540,6 +632,10 @@ db_portfolio <- function(con) {
         SELECT r.*, ROW_NUMBER() OVER (PARTITION BY initiative_id
                                        ORDER BY reviewed_at DESC, review_id DESC) AS rn
         FROM reviews r) x WHERE rn = 1),
+     va AS (SELECT * FROM (
+        SELECT v.*, ROW_NUMBER() OVER (PARTITION BY initiative_id
+                                       ORDER BY requested_at DESC, validation_id DESC) AS rn
+        FROM validations v WHERE v.status <> 'superseded') z WHERE rn = 1),
      au AS (SELECT * FROM (
         SELECT a.*, ROW_NUMBER() OVER (PARTITION BY initiative_id
                                        ORDER BY audited_at DESC, audit_id DESC) AS rn
@@ -555,6 +651,7 @@ db_portfolio <- function(con) {
        rv.m_mm_usd AS review_m, rv.t_khours AS review_t,
        rv.value_mm_usd AS review_value_mm_usd, rv.cost_mm_usd AS review_cost_mm_usd,
        rv.reviewer, rv.reviewed_at,
+       va.status AS validation_status, va.validator, va.validation_id, va.requested_at AS validation_requested_at,
        au.p_bopd AS actual_p, au.r_mmbbl AS actual_r, au.m_mm_usd AS actual_m,
        au.t_khours AS actual_t, au.c_mm_usd AS actual_c, au.adoption_pct,
        au.actual_value_mm_usd AS audited_value_mm_usd, au.audited_at
@@ -562,12 +659,31 @@ db_portfolio <- function(con) {
      LEFT JOIN rice rc ON rc.initiative_id = i.id
      LEFT JOIN pl ON pl.initiative_id = i.id
      LEFT JOIN rv ON rv.initiative_id = i.id
+     LEFT JOIN va ON va.initiative_id = i.id
      LEFT JOIN au ON au.initiative_id = i.id
      ORDER BY i.id"
   out <- db_query(con, sql)
   # BIGINT counts may come back as integer64 depending on the driver
   out$plan_lines <- as.numeric(out$plan_lines)
   out
+}
+
+#' Change stamp of the shared data
+#'
+#' A cheap fingerprint of the tables written by users; sessions poll it so
+#' that changes made by other users (e.g. a validation) appear without reload.
+#' @param con A DBI connection.
+#' @return Character string.
+#' @export
+db_change_stamp <- function(con) {
+  q <- db_query(con, "SELECT
+      (SELECT COUNT(*) FROM status_history) AS h, (SELECT MAX(updated_at) FROM initiatives) AS i,
+      (SELECT COUNT(*) FROM m4_lines) AS l, (SELECT MAX(created_at) FROM m4_lines) AS lt,
+      (SELECT COUNT(*) FROM validations) AS v, (SELECT MAX(decided_at) FROM validations) AS vd,
+      (SELECT COUNT(*) FROM reviews) AS r, (SELECT COUNT(*) FROM audits) AS a,
+      (SELECT COUNT(*) FROM rice) AS rc, (SELECT MAX(scored_at) FROM rice) AS rt,
+      (SELECT COUNT(*) FROM value_models) AS m, (SELECT SUM(active) FROM value_models) AS ma")
+  paste(unlist(q), collapse = "|")
 }
 
 # Process-mining event log -------------------------------------------------------

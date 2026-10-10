@@ -4,7 +4,15 @@
 \alias{box}
 \title{Section box (compact card)}
 \usage{
-box(title, ..., right = NULL, class = NULL)
+box(
+  title,
+  ...,
+  right = NULL,
+  class = NULL,
+  collapsible = FALSE,
+  id = NULL,
+  open = TRUE
+)
 }
 \arguments{
 \item{title}{Header title.}
@@ -14,6 +22,12 @@ box(title, ..., right = NULL, class = NULL)
 \item{right}{Optional header element aligned right.}
 
 \item{class}{Extra CSS class.}
+
+\item{collapsible}{Make the body collapsible by clicking the header.}
+
+\item{id}{Id of the collapsible body (required when \code{collapsible}).}
+
+\item{open}{Initially open.}
 }
 \value{
 A bslib card.

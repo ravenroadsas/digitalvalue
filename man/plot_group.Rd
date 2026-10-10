@@ -10,7 +10,7 @@ plot_group(status)
 \item{status}{Status vector.}
 }
 \value{
-Character vector of groups.
+Character vector of groups (the status itself).
 }
 \description{
 Chart group of a status (prioritisation scatter)

@@ -10,12 +10,12 @@ evaluation_gaps(pf)
 \item{pf}{Output of \code{\link[=compute_portfolio]{compute_portfolio()}}.}
 }
 \value{
-Data frame \code{id}, \code{name}, \code{valuation}, \code{review}, \code{audit} with values
-\code{"done"}, \code{"missing"} or \code{"n/a"}, and \code{n_missing}.
+Data frame \code{id}, \code{name}, \code{valuation}, \code{validation}, \code{review},
+\code{audit} with values \code{"done"}, \code{"missing"}, \code{"pending"} (validation sent,
+awaiting the validator) or \code{"n/a"}, and \code{n_missing}.
 }
 \description{
 An evaluation is \emph{missing} when the gates require it and it has not been
-recorded: a 4MC valuation above the valuation gate, an expert review above
-the review gate (a "Rework" decision is still pending), a value audit after
-closure. Rejected initiatives have nothing missing.
+completed: a 4MC valuation or its validation above the valuation gate, an
+approved expert review above the review gate, a value audit after delivery.
 }

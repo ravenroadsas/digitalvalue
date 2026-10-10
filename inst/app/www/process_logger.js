@@ -40,3 +40,9 @@
   setInterval(flush, FLUSH_MS);
   window.addEventListener('beforeunload', flush);
 })();
+
+// Charts and tables inside a collapsed card need a resize once it is shown
+$(document).on('shown.bs.collapse', function () {
+  window.dispatchEvent(new Event('resize'));
+  $(window).trigger('resize');
+});

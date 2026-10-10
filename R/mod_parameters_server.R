@@ -15,7 +15,8 @@ mod_parameters_server <- function(id, state) {
     output$permissions <- DT::renderDT({
       m <- permission_matrix()
       yn <- function(x) ifelse(x, "\u2713", "")
-      dt_compact(data.frame(Action = m$label, Contributor = yn(m$contributor), Superuser = yn(m$superuser)),
+      dt_compact(data.frame(Action = m$label, Everyone = yn(m$everyone), Owner = yn(m$owner),
+                            Validator = yn(m$validator), Superuser = yn(m$superuser)),
                  dom = "t", selection = "none", ordering = FALSE)
     })
     output$roles <- shiny::renderUI(htmltools::div(class = "dv-muted", style = "margin-top:6px",

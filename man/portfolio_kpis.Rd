@@ -16,7 +16,7 @@ Named list of KPIs.
 }
 \description{
 Besides portfolio size and value, the KPIs measure the value added by the
-assessment process itself: gate compliance (are the required evaluations
-done?), decision lead time (how fast does the process decide?) and
+evaluation process itself: gate compliance (are the required evaluations
+done?), evaluation lead time (how fast are initiatives evaluated?) and
 realisation rate (how accurate were the valuations?).
 }

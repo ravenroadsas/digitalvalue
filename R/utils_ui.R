@@ -55,13 +55,27 @@ status_badge <- function(status) {
 #' @param ... Body content.
 #' @param right Optional header element aligned right.
 #' @param class Extra CSS class.
+#' @param collapsible Make the body collapsible by clicking the header.
+#' @param id Id of the collapsible body (required when `collapsible`).
+#' @param open Initially open.
 #' @return A bslib card.
 #' @export
-box <- function(title, ..., right = NULL, class = NULL) {
-  bslib::card(class = paste("dv-box", class),
-    bslib::card_header(htmltools::div(class = "dv-box-header",
-                                      htmltools::span(title), right)),
-    bslib::card_body(..., fillable = FALSE))
+box <- function(title, ..., right = NULL, class = NULL, collapsible = FALSE, id = NULL, open = TRUE) {
+  body <- bslib::card_body(..., fillable = FALSE)
+  if (!collapsible) {
+    return(bslib::card(class = paste("dv-box", class),
+      bslib::card_header(htmltools::div(class = "dv-box-header", htmltools::span(title), right)),
+      body))
+  }
+  stopifnot(!is.null(id))
+  bslib::card(class = paste("dv-box dv-collapsible", class),
+    bslib::card_header(
+      class = if (open) "dv-collapse-toggle" else "dv-collapse-toggle collapsed",
+      `data-bs-toggle` = "collapse", `data-bs-target` = paste0("#", id),
+      `aria-expanded` = tolower(as.character(open)), `aria-controls` = id, role = "button",
+      htmltools::div(class = "dv-box-header",
+        htmltools::span(htmltools::span(class = "dv-chevron"), title), right)),
+    htmltools::div(id = id, class = if (open) "collapse show" else "collapse", body))
 }
 
 #' Identify the user (Posit Connect aware)

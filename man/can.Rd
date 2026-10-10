@@ -2,18 +2,22 @@
 % Please edit documentation in R/fct_roles.R
 \name{can}
 \alias{can}
-\title{Can a role perform an action?}
+\title{Can a user perform an action (on an initiative)?}
 \usage{
-can(role, action)
+can(usr, action, row = NULL)
 }
 \arguments{
-\item{role}{Role (\code{"contributor"} / \code{"superuser"}), or a user list from \code{\link[=app_user]{app_user()}}.}
+\item{usr}{A user list from \code{\link[=app_user]{app_user()}}, or a role name.}
 
 \item{action}{Action id (see \code{\link[=permission_matrix]{permission_matrix()}}).}
+
+\item{row}{Optional initiative row (see \code{\link[=compute_portfolio]{compute_portfolio()}}).}
 }
 \value{
 Logical.
 }
 \description{
-Can a role perform an action?
+Superusers can do everything. Otherwise the action is allowed to everyone,
+to the owner of \code{row}, or to the validator a pending 4MC validation of
+\code{row} is addressed to, as listed in \code{\link[=permission_matrix]{permission_matrix()}}.
 }

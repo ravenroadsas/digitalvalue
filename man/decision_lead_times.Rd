@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_kpi.R
 \name{decision_lead_times}
 \alias{decision_lead_times}
-\title{Decision lead time per initiative (days)}
+\title{Evaluation lead time per initiative (days)}
 \usage{
 decision_lead_times(history)
 }
@@ -13,5 +13,6 @@ decision_lead_times(history)
 Data frame \code{initiative_id}, \code{lead_time_days}.
 }
 \description{
-Days from registration to the first prioritisation or rejection decision.
+Days from registration until the initiative first became \code{Evaluated}
+(all required evaluations complete).
 }

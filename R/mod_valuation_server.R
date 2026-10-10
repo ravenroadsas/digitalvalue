@@ -8,17 +8,22 @@ mod_valuation_server <- function(id, state) {
     cfg <- state$cfg
     methods <- m4_methods(cfg)
 
+    # the owner records the 4MC until it is sent for validation; superusers always can
     editable <- shiny::reactive({
       r <- state$row()
-      !is.null(r) && state$can("valuate") && r$status %in% status_assessment
+      if (is.null(r) || !r$status %in% status_assessment || !state$can("valuate", r)) return(FALSE)
+      state$user$role == "superuser" || !r$validation_status %in% c("pending", "validated")
     })
-    shiny::observe(shinyjs::toggle("calculator", condition = editable()))
+    shiny::observe({
+      shinyjs::toggle("calculator", condition = editable())
+      shinyjs::toggleClass("calc_grid", "dv-calc-hidden", condition = !editable())
+    })
     shiny::observe(shinyjs::toggle("delete", condition = editable()))
 
     output$tag <- shiny::renderUI({
       r <- state$row()
       if (is.null(r)) return(NULL)
-      pending <- r$req_valuation && !r$has_valuation
+      pending <- r$req_valuation && !r$validated
       htmltools::span(class = paste("dv-tag", if (pending) "dv-tag-gate"),
                       if (pending) "required \u00b7 pending" else if (r$req_valuation) "required" else "optional")
     })
@@ -34,8 +39,11 @@ mod_valuation_server <- function(id, state) {
         else callout(type = "low", sprintf(
           "Below the review gate (value < %s mm USD and cost < %s mm USD) \u2013 expert review not required.",
           cfg$params$gate3_value_min_mm_usd, cfg$params$gate3_cost_min_mm_usd)),
-        if (!state$can("valuate")) callout(type = "info", "4MC valuation is recorded by superusers.")
-        else if (!editable()) callout(type = "info", "Valuation is locked after the decision."))
+        if (!state$can("valuate", r)) callout(type = "info",
+          "The 4MC valuation is recorded by the initiative owner or a superuser.")
+        else if (!editable()) callout(type = "info", if (r$status %in% status_decision)
+          "Valuation is locked after delivery." else
+          "Valuation is locked while it is under validation or once validated (a superuser can still edit it)."))
     })
 
     shiny::observeEvent(input$metric, {
@@ -114,6 +122,91 @@ mod_valuation_server <- function(id, state) {
       shiny::showNotification(sprintf("%s: %s line added \u2013 status %s", id, c$metric,
                                       state$row()$status), type = "message")
     })
+    # validation workflow ------------------------------------------------------
+    validations <- shiny::reactive({ state$version(); db_get_validations(state$con, state$selected() %||% "") })
+
+    output$validation <- shiny::renderUI({
+      r <- state$row()
+      if (is.null(r)) return(NULL)
+      vs <- if (is.na(r$validation_status)) "" else r$validation_status
+      v <- validations()
+      last <- if (nrow(v)) v[v$status != "superseded", , drop = FALSE][1, ] else NULL
+      who <- function(u) user_label(u, state$users())
+      can_send <- state$can("valuate", r) && r$has_valuation && r$status %in% status_assessment &&
+        (vs %in% c("", "changes_requested") || state$user$role == "superuser")
+      send_form <- if (can_send) htmltools::tagList(
+        shiny::selectizeInput(ns("validator"), "Send to validator (Posit Connect user)",
+          choices = user_choices(state$users()[state$users()$username != state$user$user, ]),
+          selected = character(0), width = "100%", options = list(placeholder = "Search users\u2026")),
+        shiny::textInput(ns("request_comment"), NULL, placeholder = "Note to the validator (optional)",
+                         width = "100%"),
+        shiny::actionButton(ns("send"), if (vs == "pending") "Re-assign validation" else "Send to validator",
+                            class = "btn-primary btn-sm"))
+      status_box <- switch(vs,
+        pending = callout(type = "gate", title = "Validation pending",
+          sprintf("Sent to %s by %s on %s.", who(r$validator), who(last$requested_by),
+                  substr(last$requested_at, 1, 10)),
+          if (!is.na(last$request_comment)) htmltools::div(class = "dv-muted", last$request_comment)),
+        validated = callout(type = "low", title = "Validated",
+          sprintf("By %s on %s.", who(last$decided_by), substr(last$decided_at, 1, 10)),
+          if (!is.na(last$decision_comment)) htmltools::div(class = "dv-muted", last$decision_comment)),
+        changes_requested = callout(type = "gate", title = "Changes requested",
+          sprintf("By %s on %s.", who(last$decided_by), substr(last$decided_at, 1, 10)),
+          if (!is.na(last$decision_comment)) htmltools::div(last$decision_comment),
+          htmltools::div(class = "dv-muted", "Update the calculation lines and send them again.")),
+        if (!r$has_valuation) callout(type = if (r$req_valuation) "gate" else "low",
+          if (r$req_valuation) "Record at least one value line, then send the 4MC to a validator."
+          else "Optional: a 4MC valuation is not required for this initiative.")
+        else callout(type = if (r$req_valuation) "gate" else "low", title = "Not yet sent",
+          "Send the recorded 4MC figures to a validator."))
+      decide_form <- if (vs == "pending" && state$can("validate", r)) htmltools::div(class = "dv-validate",
+        htmltools::div(class = "dv-section", "Your validation"),
+        shiny::textAreaInput(ns("decision_comment"), NULL, rows = 2, width = "100%",
+                             placeholder = "Comment (required when requesting changes)"),
+        htmltools::div(class = "dv-actions",
+          shiny::actionButton(ns("validate"), "Validate 4MC", class = "btn-primary btn-sm"),
+          shiny::actionButton(ns("request_changes"), "Request changes", class = "btn-outline-secondary btn-sm")))
+      htmltools::tagList(status_box, decide_form, send_form)
+    })
+
+    output$validations <- DT::renderDT({
+      v <- validations()
+      u <- state$users()
+      dt_compact(data.frame(Sent = substr(v$requested_at, 1, 10), Validator = user_label(v$validator, u),
+                            Status = gsub("_", " ", v$status), Decided = substr(v$decided_at, 1, 10),
+                            Comment = ifelse(is.na(v$decision_comment), v$request_comment, v$decision_comment),
+                            check.names = FALSE), page_length = 4, dom = "tp", selection = "none")
+    })
+
+    shiny::observeEvent(input$send, {
+      r <- state$row()
+      if (is.null(r) || !state$can("valuate", r) || !r$has_valuation) return()
+      if (!nzchar(input$validator %||% "")) {
+        return(shiny::showNotification("Choose a validator", type = "error"))
+      }
+      db_request_validation(state$con, r$id, input$validator, state$user$user,
+                            if (nzchar(input$request_comment %||% "")) input$request_comment else NA)
+      state$refresh()
+      shiny::showNotification(sprintf("%s: 4MC sent to %s for validation", r$id,
+                                      user_label(input$validator, state$users())), type = "message")
+    })
+    decide <- function(decision) {
+      r <- state$row()
+      if (is.null(r) || !isTRUE(r$validation_status == "pending") || !state$can("validate", r)) return()
+      cm <- input$decision_comment %||% ""
+      if (decision == "changes_requested" && !nzchar(trimws(cm))) {
+        return(shiny::showNotification("Explain which changes are needed", type = "error"))
+      }
+      db_decide_validation(state$con, r$validation_id, decision, state$user$user,
+                           if (nzchar(cm)) cm else NA)
+      state$refresh()
+      shiny::showNotification(sprintf("%s: 4MC %s \u2013 status %s", r$id,
+                                      if (decision == "validated") "validated" else "returned for changes",
+                                      state$row()$status), type = "message")
+    }
+    shiny::observeEvent(input$validate, decide("validated"))
+    shiny::observeEvent(input$request_changes, decide("changes_requested"))
+
     shiny::observeEvent(input$delete, {
       i <- input$lines_rows_selected
       if (is.null(i) || !editable()) return()

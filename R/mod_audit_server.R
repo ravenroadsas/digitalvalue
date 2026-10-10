@@ -9,7 +9,7 @@ mod_audit_server <- function(id, state) {
 
     editable <- shiny::reactive({
       r <- state$row()
-      !is.null(r) && state$can("audit") && r$status == "Closed"
+      !is.null(r) && state$can("audit") && r$status == "Delivered"
     })
     shiny::observe(shinyjs::toggle("form", condition = editable()))
 
@@ -25,15 +25,13 @@ mod_audit_server <- function(id, state) {
       r <- state$row()
       if (is.null(r)) return(callout(type = "info", "Select an initiative."))
       switch(r$status,
-        "Prioritized" = callout(type = "info", title = "Prioritized",
-                                "Start execution from the decision bar; the audit opens after closure."),
-        "In execution" = callout(type = "info", title = "In execution",
-                                 "Close execution from the decision bar to record the value audit."),
-        "Closed" = callout(type = "medium", title = "Value audit pending",
+        "Evaluated" = callout(type = "info", title = "Evaluated",
+                              "The owner (or a superuser) marks the initiative delivered from the delivery bar; the audit opens after delivery."),
+        "Delivered" = callout(type = "gate", title = "Value audit pending",
           if (state$can("audit")) "Record the actual 4MC figures and adoption."
           else "The value audit is recorded by superusers."),
         "Audited" = callout(type = "low", title = "Audited", "Realised value recorded."),
-        callout(type = "info", title = r$status, "Realisation starts once the initiative is prioritized."))
+        callout(type = "info", title = r$status, "Realisation starts once the evaluation is complete and the initiative is delivered."))
     })
 
     output$tiles <- shiny::renderUI({
@@ -96,8 +94,8 @@ mod_audit_server <- function(id, state) {
       if (editable() || is.null(r)) return(NULL)
       htmltools::div(class = "dv-muted",
         if (r$status == "Audited") "Audit recorded \u2013 see the audit history and the lifecycle comparison."
-        else if (r$status == "Closed") "The value audit is recorded by superusers."
-        else "The audit form opens once execution is closed.")
+        else if (r$status == "Delivered") "The value audit is recorded by superusers."
+        else "The audit form opens once the initiative is delivered.")
     })
 
     output$chart <- echarts4r::renderEcharts4r(echart_from_option(lifecycle_option(lifecycle())))

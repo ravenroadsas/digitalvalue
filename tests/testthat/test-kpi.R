@@ -4,7 +4,7 @@ test_that("realisation percentage", {
 
 test_that("decision lead times", {
   h <- data.frame(initiative_id = c("A", "A", "B"),
-                  to_status = c("Registered", "Prioritized", "Registered"),
+                  to_status = c("Recorded", "Evaluated", "Recorded"),
                   changed_at = c("2026-01-01 00:00:00", "2026-01-11 00:00:00", "2026-01-01 00:00:00"))
   lt <- decision_lead_times(h)
   expect_equal(lt$initiative_id, "A")
@@ -19,7 +19,8 @@ test_that("portfolio KPIs on demo data", {
   pf <- compute_portfolio(db_portfolio(con), cfg)
   k <- portfolio_kpis(pf, db_get_status_history(con))
   expect_equal(k$n_total, nrow(pf))
-  expect_equal(k$n_prioritized + k$n_execution + k$n_closed + k$n_rejected + k$n_assessment, nrow(pf))
+  expect_equal(k$n_recorded + k$n_evaluated + k$n_delivered + k$n_audited, nrow(pf))
+  expect_equal(k$evaluated_value_mm_usd, sum(pf$planned_value_mm_usd[pf$status == "Evaluated"]))
   expect_gt(k$realized_value_mm_usd, 0)
   expect_true(k$realization_rate_pct > 0 && k$realization_rate_pct < 100)
   expect_true(k$gate2_compliance_pct <= 100)

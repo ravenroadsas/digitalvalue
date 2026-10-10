@@ -4,6 +4,7 @@
 mod_review_ui <- function(id) {
   ns <- shiny::NS(id)
   box("3 \u00b7 Expert review", class = "dv-step-card", right = shiny::uiOutput(ns("tag"), inline = TRUE),
+    collapsible = TRUE, id = ns("card"),
     shiny::uiOutput(ns("gate")),
     bslib::layout_columns(col_widths = c(5, 7),
       htmltools::div(id = ns("form"),

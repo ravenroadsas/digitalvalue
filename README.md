@@ -5,39 +5,55 @@ Shiny application, built as an R package, for recording digital initiatives and 
 The app has two main tabs:
 
 * **Initiative**: select an initiative, or register a new one, and work through its lifecycle.
-* **Portfolio**: KPIs, the prioritisation chart, alerts and the register of all initiatives.
+* **Portfolio**: KPIs, the value-vs-effort and status charts, alerts, the validations waiting for you, and the register of all initiatives. Search an initiative, or click it in the register, to highlight it in the charts; **Open initiative** jumps to it.
 
 A **Methodology** tab, open to everyone, explains the method in **English and Spanish**: a summary with the principles, then one section per step, the gates, the value models, roles, KPIs and a glossary. The text is in `inst/app/methodology/methodology_en.md` and `methodology_es.md`, so it can be edited without touching code. Thresholds, weights and conversion factors are written as `{{placeholders}}` and filled from the active configuration, so the document always matches what the app does.
 
 Superusers also get an **Admin** menu: Value models, Process log and Parameters.
 
-![Initiative](docs/screenshots/initiative_appraisal.png)
+![Initiative](docs/screenshots/initiative_evaluation.png)
 
 ## Lifecycle
 
+Every initiative goes through four statuses: **Recorded → Evaluated → Delivered → Audited**.
+
+* **Recorded** and **Evaluated** are derived from the data: an initiative becomes Evaluated automatically as soon as every evaluation required by the gates is complete.
+* **Delivered** is set by the owner (or a superuser). **Audited** is set when a superuser records the value audit.
+* The app evaluates and tracks value; it does not approve or reject the execution of initiatives.
+
 | View | Step | What is recorded | Who | Required when |
 |---|---|---|---|---|
-| **Appraisal** (pre-execution) | 1 Registration & RICE | Name, description, owner, unit, cost, and the RICE inputs, saved in one form | **Everyone**. The record is then locked; only a superuser can change it | Always |
-| | 2 4MC valuation | Calculation lines per metric (P, R, M, T and cost C), each with its formula, parameters and comment | Superuser | Effort ≥ L or RICE score ≥ 3 (*valuation gate*) |
-| | 3 Expert review | Manual evaluation: decision (Approve / Rework / Reject) with its **own 4MC figures**, including the validated cost C | Superuser | Ex-ante value ≥ 5 mm USD or cost ≥ 1 mm USD (*review gate*) |
-| | 4 Decision | Prioritize or reject | Superuser | — |
-| **Realisation** (post-execution) | 5 Execution | Start, then close | Superuser | — |
-| | 6 Value audit | **Actual 4MC figures (including actual cost) plus adoption** (% of the intended users actually using the solution) | Superuser | After closure |
+| **Evaluation** (before delivery) | 1 Registration & RICE | Name, description, owner (searched in the Posit Connect directory), unit, dates and the RICE inputs, in one form | **Everyone**. The record is then locked; only a superuser can modify it | Always |
+| | 2 4MC valuation | Calculation lines per metric (P, R, M, T and cost C), each with its formula, parameters and comment | Owner (or superuser) | Effort ≥ L or RICE score ≥ 3 (*valuation gate*) |
+| | 3 4MC validation | The owner sends the 4MC to a validator (a Posit Connect user), who validates it or requests changes with a comment. Lines are locked while pending or once validated | Validator | Whenever the 4MC is required |
+| | 4 Expert review | Manual evaluation, Approve or Rework, with its **own 4MC figures**, including the validated cost C | Superuser | Ex-ante value ≥ 5 mm USD or cost ≥ 1 mm USD (*review gate*) |
+| **Realisation** (after delivery) | 5 Delivery | Mark as delivered (a superuser can revert it) | Owner or superuser | When Evaluated |
+| | 6 Value audit | **Actual 4MC figures (including actual cost) plus adoption** (% of the intended users actually using the solution) | Superuser | After delivery |
 
-The status always shows the next pending appraisal step (`Registered` → `4MC valuation` → `Expert review` → `Ready`) until a decision is taken (`Prioritized`, `In execution`, `Closed`, `Audited`, `Rejected`). It is recalculated after every save, and every change is written to `status_history`.
-
-The **ex-ante value** of an initiative is the expert-review value when the review approved it, otherwise the 4MC estimate.
+* **Ex-ante value**: the expert-review value when the review approved the initiative, otherwise the 4MC estimate.
+* **Planned cost**: the approved review's C, otherwise the 4MC cost estimate.
+* **Steps and history**: the next pending step is shown next to the status, and every status change is written to `status_history`.
+* **Existing databases**: statuses are migrated once at startup (Prioritized/In execution → Evaluated, Closed → Delivered, earlier appraisal statuses and Rejected → Recorded). 4MC valuations recorded before the validation workflow count as validated.
 
 ## User levels
 
-| Action | Contributor | Superuser |
-|---|:-:|:-:|
-| Register an initiative with its RICE | ✓ | ✓ |
-| Edit a registration or its RICE after saving | | ✓ |
-| 4MC valuation, expert review, decisions, value audit | | ✓ |
-| Calibrate and publish value models, Admin tabs | | ✓ |
+| Action | Everyone | Owner | Validator | Superuser |
+|---|:-:|:-:|:-:|:-:|
+| Register an initiative with its RICE | ✓ | ✓ | ✓ | ✓ |
+| Modify a registration or its RICE after saving | | | | ✓ |
+| Record the 4MC valuation and send it to a validator | | ✓ | | ✓ |
+| Validate the 4MC valuation | | | ✓ | ✓ |
+| Expert review | | | | ✓ |
+| Mark delivered (revert: superuser only) | | ✓ | | ✓ |
+| Value audit, model calibration, Admin tabs | | | | ✓ |
 
-Superusers are identified from the Posit Connect login: members of the group in `DV_SUPERUSER_GROUP`, or users listed in `DV_SUPERUSERS` (comma-separated). When neither variable is set (local development), everyone is a superuser; `DV_DEV_ROLE=contributor` simulates a contributor. Forms a user cannot use are hidden or disabled, and every write is checked again on the server. The matrix is in `permission_matrix()` (`R/fct_roles.R`).
+* **Owner**: the initiative's owner or its creator. **Validator**: the user a pending 4MC validation is addressed to.
+* **Superusers** are identified from the Posit Connect login: members of the group in `DV_SUPERUSER_GROUP`, or users listed in `DV_SUPERUSERS` (comma-separated). When neither variable is set (local development), everyone is a superuser; `DV_DEV_ROLE=contributor` simulates a contributor.
+* **Enforcement**: forms a user cannot use are hidden or disabled, and every write is checked again on the server (`can()` in `R/fct_roles.R`).
+
+**User directory.** Owners and validators are picked from the Posit Connect users, read through the Connect Server API (`GET /__api__/v1/users`). This uses `CONNECT_SERVER` (provided by Connect) and `CONNECT_API_KEY` (add it as a content variable). The list is cached for one hour. Elsewhere the app uses `inst/config/users.csv` (or `DV_USERS_FILE`).
+
+**Multi-user updates.** Each session checks a cheap fingerprint of the shared tables every 5 s, so changes made by other users (e.g. a validation) appear without reloading.
 
 ## Valuation logic
 
@@ -93,9 +109,12 @@ Two log-linear regressions chain the lifecycle (`R/fct_value_model.R`):
 * **Missing evaluations** are the only thing shown in colour (amber):
   * **Initiative tab:** the "next stage required" callouts. Registration & RICE shows whether a 4MC valuation is needed; the 4MC valuation card shows whether an expert review is needed. Pending required steps are tagged in amber.
   * **Portfolio tab:** one callout per missing evaluation type (4MC valuation, expert review, value audit), listing the initiatives concerned, plus amber "missing" cells in the register's 4MC / Review / Audit columns.
-* **Alerts** list initiatives above a gate with a pending step, closed initiatives without an audit, and initiatives ready for a decision. Clicking an alert opens the initiative on the right view.
-* **Portfolio KPIs**: pipeline, committed and realised value; value/cost; realisation rate (audited ÷ ex-ante); mean adoption; gate compliance (share of required 4MC valuations and reviews actually done); decision lead time; open alerts.
-* **Prioritisation chart** (value vs effort, bubble size = reach): the y-axis is reach × impact × confidence (RICE without the effort divisor), the ex-ante value, or the value / model estimate. On the R × I × C view the RICE-score gate is drawn as a staircase (threshold × effort weight): initiatives above it pass the valuation gate. Single-hue palette, with prioritized initiatives as dark circles and initiatives in execution as the darkest diamonds.
+* **Alerts** list the pending actions: 4MC valuation, 4MC to send or awaiting its validator, expert review, value audit after delivery, and evaluated initiatives ready to deliver. Clicking an alert opens the initiative on the right view.
+* **Portfolio KPIs**:
+  * value: pipeline (recorded), evaluated, delivered and realised value, and value/cost;
+  * accuracy: realisation rate (audited ÷ ex-ante) and mean adoption;
+  * process: gate compliance (share of required 4MCs validated and reviews approved), evaluation lead time (registration → Evaluated) and open alerts.
+* **Prioritisation chart** (value vs effort, bubble size = reach): the y-axis is reach × impact × confidence (RICE without the effort divisor), the ex-ante value, or the value / model estimate. On the R × I × C view the RICE-score gate is drawn as a staircase (threshold × effort weight): initiatives above it pass the valuation gate. Single-hue palette: evaluated initiatives are dark circles, delivered ones the darkest diamonds, audited ones squares. A highlighted initiative gets an amber ring and label, and its status bar is outlined.
 
 ## Architecture
 
@@ -103,13 +122,14 @@ Two log-linear regressions chain the lifecycle (`R/fct_value_model.R`):
 R/
   app_ui.R, app_server.R, run_app.R        app shell: two tabs + Admin menu, no sidebar
   mod_initiative_ui.R / _server.R          Initiative tab: selector, stepper, decision bar,
-                                           Appraisal / Realisation views
+                                           Evaluation / Realisation views (collapsible step cards)
     mod_register_*, mod_valuation_*,       components of the Initiative tab (one ui/server pair each)
     mod_review_*, mod_audit_*
   mod_portfolio_ui.R / _server.R           Portfolio tab
   mod_methodology_ui.R / _server.R         Methodology tab (English / Spanish)
   mod_models_*, mod_process_*,             Admin tabs (superusers only)
   mod_parameters_*
+  fct_users.R                              Posit Connect user directory (owners, validators)
   fct_rice.R, fct_4m.R, fct_gates.R,       business logic: pure functions, unit tested
   fct_roles.R, fct_kpi.R, fct_value_model.R,
   fct_plots.R, fct_process_mining.R,
@@ -133,7 +153,7 @@ Parameters, gates, RICE weights and the event map are stored as tables:
 * **Posit Connect**: set `DV_PINS_BOARD=connect` (and optionally `DV_PINS_OWNER`), then publish the pins once with `digitalvalue::publish_config_pins()`.
 * **Local / fallback**: the CSV files in `inst/config`.
 
-Environment variables are used only for infrastructure and identity: `DV_DB_PATH`, `DV_DB_DRIVER`, `DV_PINS_BOARD`, `DV_PINS_OWNER`, `DV_SUPERUSER_GROUP`, `DV_SUPERUSERS`, `DV_SEED_DEMO`.
+Environment variables are used only for infrastructure and identity: `DV_DB_PATH`, `DV_DB_DRIVER`, `DV_PINS_BOARD`, `DV_PINS_OWNER`, `DV_SUPERUSER_GROUP`, `DV_SUPERUSERS`, `DV_SEED_DEMO`, `CONNECT_API_KEY`, `DV_USERS_FILE`.
 
 ### Database (DuckDB)
 
@@ -144,6 +164,8 @@ Environment variables are used only for infrastructure and identity: `DV_DB_PATH
   * `m4_lines`: 4MC calculation lines
   * `reviews`: expert reviews with their 4MC figures
   * `audits`: actual 4MC figures, actual cost and adoption
+  * `validations`: 4MC validation requests and decisions
+  * `schema_migrations`: data migrations already applied
   * `value_models`: published model versions
   * `status_history`, `event_log`
 * **Migration to an enterprise database**: only `R/data_db.R` changes. Add a driver branch in `db_connect()` (e.g. `odbc::odbc()`). The SQL is ANSI with `?` placeholders (`sql_params()` rewrites them for PostgreSQL), and timestamps are ISO-8601 UTC text.
@@ -186,4 +208,4 @@ shiny::runApp()                      # uses app.R
 | | |
 |---|---|
 | ![Realisation](docs/screenshots/initiative_realisation.png) | ![Portfolio](docs/screenshots/portfolio.png) |
-| ![Value models](docs/screenshots/value_models.png) | ![Contributor view](docs/screenshots/contributor_view.png) |
+| ![Value models](docs/screenshots/value_models.png) | ![4MC validation](docs/screenshots/validation_validator.png) |

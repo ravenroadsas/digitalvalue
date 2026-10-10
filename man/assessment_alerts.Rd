@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_gates.R
 \name{assessment_alerts}
 \alias{assessment_alerts}
-\title{Alerts: initiatives passing evaluation criteria with pending actions}
+\title{Alerts: pending actions on the initiatives}
 \usage{
 assessment_alerts(pf)
 }
@@ -11,8 +11,8 @@ assessment_alerts(pf)
 }
 \value{
 Data frame \code{id}, \code{name}, \code{severity}, \code{alert}, \code{stage} (lifecycle
-view to open: \code{"appraisal"} or \code{"realisation"}).
+view to open: \code{"evaluation"} or \code{"realisation"}).
 }
 \description{
-Alerts: initiatives passing evaluation criteria with pending actions
+Alerts: pending actions on the initiatives
 }

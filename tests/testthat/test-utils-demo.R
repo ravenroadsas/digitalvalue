@@ -2,7 +2,7 @@ test_that("formatting helpers", {
   expect_equal(fmt_num(1234.567, 1, " x"), "1,234.6 x")
   expect_equal(fmt_num(NA), "–")
   expect_s3_class(kpi_tile("a", 1, "b", "good"), "shiny.tag")
-  expect_match(as.character(status_badge("Prioritized")), mono$c700)
+  expect_match(as.character(status_badge("Evaluated")), mono$c700)
   expect_match(as.character(callout("x", title = "t", type = "high")), "dv-callout-high")
 })
 
@@ -18,15 +18,38 @@ test_that("two user levels from Posit Connect identity", {
   expect_equal(user_role("bob"), "contributor")
 })
 
-test_that("contributors can only register; everything else needs a superuser", {
+test_that("permissions: everyone registers, owners valuate and deliver, validators validate", {
   m <- permission_matrix()
-  expect_equal(m$action[m$contributor], "register")
+  expect_equal(m$action[m$everyone], "register")
+  expect_setequal(m$action[m$owner], c("register", "valuate", "deliver"))
+  expect_setequal(m$action[m$validator], c("register", "validate"))
   expect_true(all(m$superuser))
-  expect_true(can("contributor", "register"))
-  expect_false(can("contributor", "edit_registration"))
-  expect_false(can(list(role = "contributor"), "audit"))
-  expect_true(can("superuser", "calibrate"))
+  ana <- list(user = "aruiz", role = "contributor")
+  bob <- list(user = "bob", role = "contributor")
+  row <- data.frame(owner = "aruiz", created_by = "x", validation_status = "pending", validator = "bob")
+  expect_true(can(ana, "register"))
+  expect_true(can(ana, "valuate", row))
+  expect_true(can(ana, "deliver", row))
+  expect_false(can(ana, "validate", row))
+  expect_false(can(ana, "edit_registration", row))
+  expect_true(can(bob, "validate", row))
+  expect_false(can(bob, "valuate", row))
+  expect_false(can(bob, "validate", transform(row, validation_status = "validated")))
+  expect_false(can(ana, "audit", row))
+  expect_true(can(list(user = "z", role = "superuser"), "undeliver", row))
+  expect_false(can("contributor", "valuate"))
   expect_error(can("superuser", "fly"), "Unknown action")
+})
+
+test_that("user directory falls back to the local list; labels and choices", {
+  u <- local_users()
+  expect_true(all(c("aruiz", "dval") %in% u$username))
+  ch <- user_choices(u, extra = "ghost")
+  expect_equal(unname(ch[length(ch)]), "ghost")
+  expect_equal(names(ch)[ch == "aruiz"], "Ana Ruiz (aruiz)")
+  expect_equal(user_label(c("aruiz", "nobody"), u), c("Ana Ruiz", "nobody"))
+  withr::local_envvar(CONNECT_SERVER = "", CONNECT_API_KEY = "")
+  expect_equal(nrow(user_directory(refresh = TRUE)), nrow(u))
 })
 
 test_that("demo seeding is idempotent", {

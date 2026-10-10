@@ -4,10 +4,12 @@
 \alias{status_option}
 \title{ECharts option: initiatives and value per status}
 \usage{
-status_option(pf)
+status_option(pf, highlight = NULL)
 }
 \arguments{
 \item{pf}{Portfolio data frame.}
+
+\item{highlight}{Optional initiative id whose status bar is outlined.}
 }
 \value{
 An ECharts option list.

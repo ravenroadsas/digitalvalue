@@ -7,7 +7,7 @@
 permission_matrix()
 }
 \value{
-Data frame \code{action}, \code{label}, \code{contributor}, \code{superuser}.
+Data frame \code{action}, \code{label}, \code{everyone}, \code{owner}, \code{validator}, \code{superuser}.
 }
 \description{
 Permission matrix

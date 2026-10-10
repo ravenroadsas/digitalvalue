@@ -10,6 +10,6 @@ group_style()
 Data frame \code{group}, \code{color}, \code{symbol}.
 }
 \description{
-Prioritized (dark circle) and In execution (darkest diamond) are labelled
-and drawn on top.
+Evaluated (dark circle) and Delivered (darkest diamond) are labelled and
+drawn on top.
 }

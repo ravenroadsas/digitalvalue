@@ -4,6 +4,7 @@
 mod_register_ui <- function(id) {
   ns <- shiny::NS(id)
   box(shiny::textOutput(ns("title"), inline = TRUE), class = "dv-step-card",
+    collapsible = TRUE, id = ns("card"),
     right = shiny::uiOutput(ns("lock"), inline = TRUE),
     bslib::layout_columns(col_widths = c(6, 6),
       htmltools::div(
@@ -12,10 +13,10 @@ mod_register_ui <- function(id) {
         shiny::textAreaInput(ns("description"), "Brief description", rows = 3, width = "100%",
                              resize = "vertical"),
         bslib::layout_columns(col_widths = c(6, 6),
-          shiny::textInput(ns("owner"), "Owner"),
+          shiny::selectizeInput(ns("owner"), "Owner (Posit Connect user)", choices = NULL,
+                                options = list(placeholder = "Search users\u2026")),
           shiny::textInput(ns("business_unit"), "Business unit")),
-        bslib::layout_columns(col_widths = c(4, 4, 4),
-          shiny::numericInput(ns("cost_mm_usd"), "Cost (mm USD)", value = NA, min = 0, step = 0.05),
+        bslib::layout_columns(col_widths = c(6, 6),
           shiny::dateInput(ns("start_date"), "Start"),
           shiny::dateInput(ns("end_date"), "End", value = Sys.Date() + 180))),
       htmltools::div(

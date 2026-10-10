@@ -11,39 +11,32 @@ mono <- list(c050 = "#F5F7F9", c100 = "#E6EAEF", c200 = "#CDD5DE", c300 = "#A9B5
 
 #' Shade per status
 #'
-#' One hue: initiatives in appraisal are light, prioritised and in-execution
-#' initiatives are the darkest so they stand out.
+#' One hue: recorded initiatives are light, evaluated and delivered ones are
+#' the darkest so they stand out.
 #' @return Named character vector.
 #' @export
 status_colors <- function() {
-  c("Registered" = mono$c200, "4MC valuation" = mono$c300, "Expert review" = mono$c400,
-    "Ready" = mono$c500, "Prioritized" = mono$c700, "In execution" = mono$c900,
-    "Closed" = mono$c600, "Audited" = mono$c600, "Rejected" = mono$c100)
+  c("Recorded" = mono$c300, "Evaluated" = mono$c700, "Delivered" = mono$c900, "Audited" = mono$c500)
 }
 
 #' Chart group of a status (prioritisation scatter)
 #' @param status Status vector.
-#' @return Character vector of groups.
+#' @return Character vector of groups (the status itself).
 #' @export
 plot_group <- function(status) {
-  ifelse(status == "Prioritized", "Prioritized",
-  ifelse(status == "In execution", "In execution",
-  ifelse(status %in% c("Closed", "Audited"), "Closed / audited",
-  ifelse(status == "Rejected", "Rejected",
-  ifelse(status == "Ready", "Ready for decision", "In appraisal")))))
+  ifelse(status %in% status_all, status, "Recorded")
 }
 
 #' Shade and marker per scatter group
 #'
-#' Prioritized (dark circle) and In execution (darkest diamond) are labelled
-#' and drawn on top.
+#' Evaluated (dark circle) and Delivered (darkest diamond) are labelled and
+#' drawn on top.
 #' @return Data frame `group`, `color`, `symbol`.
 #' @export
 group_style <- function() {
-  data.frame(group = c("In appraisal", "Ready for decision", "Prioritized", "In execution",
-                       "Closed / audited", "Rejected"),
-             color = c(mono$c300, mono$c500, mono$c700, mono$c900, mono$c400, mono$c200),
-             symbol = c("circle", "triangle", "circle", "diamond", "rect", "circle"),
+  data.frame(group = status_all,
+             color = unname(status_colors()[status_all]),
+             symbol = c("circle", "circle", "diamond", "rect"),
              stringsAsFactors = FALSE)
 }
 
@@ -102,7 +95,7 @@ prioritization_option <- function(pf, cfg, y = c("rice_value", "value", "estimat
   series <- lapply(gs$group, function(g) {
     s <- d[d$group == g, , drop = FALSE]
     col <- gs$color[gs$group == g]
-    strong <- g %in% c("Prioritized", "In execution")
+    strong <- g %in% c("Evaluated", "Delivered")
     list(
       name = g, type = "scatter",
       data = lapply(seq_len(nrow(s)), function(i) list(
@@ -112,11 +105,15 @@ prioritization_option <- function(pf, cfg, y = c("rice_value", "value", "estimat
         itemStyle = c(
           if (s$estimated[i]) list(color = "#ffffff", borderColor = col, borderWidth = 2,
                                    borderType = "dashed", opacity = 1),
-          if (!is.null(highlight) && s$id[i] == highlight) list(borderColor = "#111", borderWidth = 3)))),
+          if (!is.null(highlight) && s$id[i] %in% highlight)
+            list(borderColor = "#E39B23", borderWidth = 4, shadowBlur = 8, shadowColor = "#E39B23")),
+        symbolSize = if (!is.null(highlight) && s$id[i] %in% highlight) 8 + s$size[i] * 4 + 10 else NULL,
+        label = if (!is.null(highlight) && s$id[i] %in% highlight)
+          list(show = TRUE, formatter = s$id[i], fontWeight = "bold", color = "#7A4A00") else NULL)),
       symbolSize = js("function (v) { return 8 + v[2] * 4; }"),
       symbol = gs$symbol[gs$group == g],
       itemStyle = list(color = col, opacity = if (strong) 1 else 0.85,
-                       borderColor = if (g == "Rejected") mono$c400 else "#ffffff",
+                       borderColor = "#ffffff",
                        borderWidth = if (strong) 1.2 else 0.8),
       label = list(show = strong, position = "right", fontSize = 9, color = mono$c900,
                    formatter = js("function (p) { return p.data.id; }")),
@@ -174,9 +171,11 @@ prioritization_option <- function(pf, cfg, y = c("rice_value", "value", "estimat
 
 #' ECharts option: initiatives and value per status
 #' @param pf Portfolio data frame.
+#' @param highlight Optional initiative id whose status bar is outlined.
 #' @return An ECharts option list.
 #' @export
-status_option <- function(pf) {
+status_option <- function(pf, highlight = NULL) {
+  hs <- if (!is.null(highlight) && highlight %in% pf$id) pf$status[pf$id == highlight][1] else ""
   s <- status_summary(pf)
   cols <- status_colors()
   list(
@@ -192,8 +191,9 @@ status_option <- function(pf) {
     series = list(
       list(name = "Initiatives", type = "bar", barWidth = "55%", itemStyle = list(color = mono$c600),
            data = lapply(seq_len(nrow(s)), function(i)
-             list(value = s$n[i], itemStyle = list(color = unname(cols[s$status[i]]),
-                                                   borderColor = mono$c400, borderWidth = 0.5)))),
+             list(value = s$n[i], itemStyle = if (s$status[i] == hs)
+               list(color = unname(cols[s$status[i]]), borderColor = "#E39B23", borderWidth = 3)
+               else list(color = unname(cols[s$status[i]]), borderColor = mono$c400, borderWidth = 0.5)))),
       list(name = "Ex-ante value (mm USD)", type = "line", yAxisIndex = 1,
            symbolSize = 6, lineStyle = list(color = mono$c900, width = 1),
            itemStyle = list(color = mono$c900), data = round(s$value_mm_usd, 2)))

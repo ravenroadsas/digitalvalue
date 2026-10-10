@@ -9,7 +9,7 @@
 mod_register_server <- function(id, state, new_mode = function() FALSE) {
   shiny::moduleServer(id, function(input, output, session) {
     cfg <- state$cfg
-    fields <- c("name", "description", "owner", "business_unit", "cost_mm_usd", "start_date",
+    fields <- c("name", "description", "owner", "business_unit", "start_date",
                 "end_date", "users", "impact", "confidence", "effort", "rationale")
     shiny::updateSelectInput(session, "impact", choices = rice_levels(cfg, "impact"), selected = "M")
     shiny::updateSelectInput(session, "confidence", choices = rice_levels(cfg, "confidence"), selected = "Low")
@@ -33,9 +33,10 @@ mod_register_server <- function(id, state, new_mode = function() FALSE) {
       g <- function(x, k) if (is.null(x) || !nrow(x) || is.na(x[[k]])) "" else as.character(x[[k]])
       shiny::updateTextInput(session, "name", value = g(i, "name"))
       shiny::updateTextAreaInput(session, "description", value = g(i, "description"))
-      shiny::updateTextInput(session, "owner", value = if (is.null(i)) state$user$user else g(i, "owner"))
+      owner <- if (is.null(i)) state$user$user else g(i, "owner")
+      shiny::updateSelectizeInput(session, "owner", server = TRUE, selected = owner,
+                                  choices = user_choices(state$users(), owner))
       shiny::updateTextInput(session, "business_unit", value = g(i, "business_unit"))
-      shiny::updateNumericInput(session, "cost_mm_usd", value = if (is.null(i)) NA else i$cost_mm_usd)
       if (nzchar(g(i, "start_date"))) shiny::updateDateInput(session, "start_date", value = g(i, "start_date"))
       if (nzchar(g(i, "end_date"))) shiny::updateDateInput(session, "end_date", value = g(i, "end_date"))
       has_rc <- !is.null(rc) && nrow(rc) > 0
@@ -95,7 +96,7 @@ mod_register_server <- function(id, state, new_mode = function() FALSE) {
     form <- function() {
       d <- function(x) if (length(x) && !is.na(x)) format(x) else NA
       list(name = input$name, description = input$description, owner = input$owner,
-           business_unit = input$business_unit, cost_mm_usd = input$cost_mm_usd,
+           business_unit = input$business_unit,
            start_date = d(input$start_date), end_date = d(input$end_date))
     }
 

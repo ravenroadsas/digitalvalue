@@ -10,6 +10,6 @@ mod_initiative_ui(id)
 \item{id}{Module id.}
 }
 \description{
-Appraisal (pre-execution): registration & RICE, 4MC valuation, expert
-review, decision. Realisation (post-execution): execution and value audit.
+Evaluation: registration & RICE, 4MC valuation and its validation, expert
+review. Realisation: delivery and value audit.
 }

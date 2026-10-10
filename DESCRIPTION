@@ -17,6 +17,7 @@ Depends: R (>= 4.1)
 Imports:
     bslib (>= 0.6.0),
     commonmark,
+    curl,
     DBI,
     duckdb,
     DT,

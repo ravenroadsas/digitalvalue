@@ -2,13 +2,14 @@
 % Please edit documentation in R/fct_gates.R
 \name{derive_status}
 \alias{derive_status}
-\title{Derive the appraisal status from the available data}
+\title{Derive the status from the available data}
 \usage{
 derive_status(
   current,
   has_rice,
   req_val,
   has_valuation,
+  validated,
   req_rev,
   review_decision
 )
@@ -20,7 +21,9 @@ derive_status(
 
 \item{req_val}{Logical, 4MC valuation required.}
 
-\item{has_valuation}{Logical, at least one 4MC line.}
+\item{has_valuation}{Logical, at least one 4MC value line.}
+
+\item{validated}{Logical, latest 4MC validation is "validated".}
 
 \item{req_rev}{Logical, expert review required.}
 
@@ -30,6 +33,6 @@ derive_status(
 Character vector of statuses.
 }
 \description{
-Decision statuses (Prioritized, In execution, ...) are kept; otherwise the
-status is the first pending appraisal step, or "Ready" when complete.
+\code{Delivered} and \code{Audited} are kept; otherwise the initiative is \code{Evaluated}
+when every required evaluation is complete, \code{Recorded} otherwise.
 }

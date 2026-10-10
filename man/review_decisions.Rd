@@ -5,7 +5,7 @@
 \alias{review_decisions}
 \title{Expert review decisions}
 \format{
-An object of class \code{character} of length 3.
+An object of class \code{character} of length 2.
 }
 \usage{
 review_decisions

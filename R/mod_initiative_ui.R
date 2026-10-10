@@ -1,7 +1,7 @@
 #' Initiative tab UI: select or register an initiative and follow its lifecycle
 #'
-#' Appraisal (pre-execution): registration & RICE, 4MC valuation, expert
-#' review, decision. Realisation (post-execution): execution and value audit.
+#' Evaluation: registration & RICE, 4MC valuation and its validation, expert
+#' review. Realisation: delivery and value audit.
 #' @param id Module id.
 #' @export
 mod_initiative_ui <- function(id) {
@@ -16,11 +16,11 @@ mod_initiative_ui <- function(id) {
     shiny::uiOutput(ns("stepper")),
     shiny::uiOutput(ns("workflow")),
     bslib::navset_underline(id = ns("stage"),
-      bslib::nav_panel("Appraisal \u00b7 pre-execution", value = "appraisal",
+      bslib::nav_panel("Evaluation \u00b7 before delivery", value = "evaluation",
         mod_register_ui(ns("register")),
         mod_valuation_ui(ns("valuation")),
         mod_review_ui(ns("review"))),
-      bslib::nav_panel("Realisation \u00b7 post-execution", value = "realisation",
+      bslib::nav_panel("Realisation \u00b7 after delivery", value = "realisation",
         mod_audit_ui(ns("audit")))
     )
   )

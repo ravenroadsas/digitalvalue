@@ -1,12 +1,28 @@
-test_that("status groups and colours highlight prioritized and executing", {
-  expect_equal(plot_group(c("Prioritized", "In execution", "4MC valuation", "Ready", "Audited", "Rejected")),
-               c("Prioritized", "In execution", "In appraisal", "Ready for decision",
-                 "Closed / audited", "Rejected"))
+test_that("status groups: evaluated and delivered stand out", {
+  expect_equal(plot_group(c("Recorded", "Evaluated", "Delivered", "Audited", "Prioritized")),
+               c("Recorded", "Evaluated", "Delivered", "Audited", "Recorded"))
   expect_true(all(status_all %in% names(status_colors())))
   gs <- group_style()
-  expect_false(gs$color[gs$group == "Prioritized"] == gs$color[gs$group == "In execution"])
-  expect_false(gs$symbol[gs$group == "Prioritized"] == gs$symbol[gs$group == "In execution"])
+  expect_equal(gs$group, status_all)
+  expect_false(gs$color[gs$group == "Evaluated"] == gs$color[gs$group == "Delivered"])
+  expect_false(gs$symbol[gs$group == "Evaluated"] == gs$symbol[gs$group == "Delivered"])
   expect_true(all(unlist(mono) == toupper(unlist(mono))))
+})
+
+test_that("highlighted initiative gets an amber ring, label and outlined status bar", {
+  cfg <- test_cfg()
+  con <- test_con()
+  seed_demo_data(con, cfg)
+  pf <- compute_portfolio(db_portfolio(con), cfg)
+  o <- prioritization_option(pf, cfg, "value", highlight = "DV-0002")
+  pts <- unlist(lapply(o$series, `[[`, "data"), recursive = FALSE)
+  hit <- Filter(function(p) identical(p$id, "DV-0002"), pts)[[1]]
+  expect_equal(hit$itemStyle$borderColor, "#E39B23")
+  expect_true(hit$label$show)
+  so <- status_option(pf, highlight = "DV-0002")
+  bars <- so$series[[1]]$data
+  st <- pf$status[pf$id == "DV-0002"]
+  expect_equal(bars[[match(st, status_all)]]$itemStyle$borderColor, "#E39B23")
 })
 
 test_that("prioritisation data and option", {

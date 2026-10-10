@@ -8,9 +8,10 @@ realization_pct <- function(actual, planned) {
 
 safe_ratio <- function(num, den) if (is.na(den) || den == 0) NA_real_ else num / den
 
-#' Decision lead time per initiative (days)
+#' Evaluation lead time per initiative (days)
 #'
-#' Days from registration to the first prioritisation or rejection decision.
+#' Days from registration until the initiative first became `Evaluated`
+#' (all required evaluations complete).
 #' @param history Status history (see [db_get_status_history()]).
 #' @return Data frame `initiative_id`, `lead_time_days`.
 #' @export
@@ -23,7 +24,7 @@ decision_lead_times <- function(history) {
   lt <- vapply(ids, function(i) {
     sel <- history$initiative_id == i
     start <- min(ts[sel])
-    dec <- ts[sel & history$to_status %in% c("Prioritized", "Rejected")]
+    dec <- ts[sel & history$to_status %in% "Evaluated"]
     if (!length(dec)) NA_real_ else as.numeric(difftime(min(dec), start, units = "days"))
   }, numeric(1))
   out <- data.frame(initiative_id = ids, lead_time_days = unname(lt), stringsAsFactors = FALSE)
@@ -33,8 +34,8 @@ decision_lead_times <- function(history) {
 #' Portfolio KPIs
 #'
 #' Besides portfolio size and value, the KPIs measure the value added by the
-#' assessment process itself: gate compliance (are the required evaluations
-#' done?), decision lead time (how fast does the process decide?) and
+#' evaluation process itself: gate compliance (are the required evaluations
+#' done?), evaluation lead time (how fast are initiatives evaluated?) and
 #' realisation rate (how accurate were the valuations?).
 #'
 #' @param pf Output of [compute_portfolio()].
@@ -43,30 +44,32 @@ decision_lead_times <- function(history) {
 #' @export
 portfolio_kpis <- function(pf, history = NULL) {
   st <- pf$status
-  committed <- st %in% c("Prioritized", "In execution")
+  evaluated <- st == "Evaluated"
+  delivered <- st == "Delivered"
   audited <- st == "Audited"
   lt <- decision_lead_times(history)
   req2 <- pf$req_valuation
   req3 <- pf$req_review
-  reviewed <- !is.na(pf$review_decision) & pf$review_decision %in% c("Approve", "Reject")
+  approved <- !is.na(pf$review_decision) & pf$review_decision == "Approve"
+  ev <- evaluated | delivered
   list(
     n_total = nrow(pf),
-    n_assessment = sum(st %in% status_assessment),
-    n_prioritized = sum(st == "Prioritized"),
-    n_execution = sum(st == "In execution"),
-    n_closed = sum(st %in% c("Closed", "Audited")),
-    n_rejected = sum(st == "Rejected"),
-    pipeline_value_mm_usd = sum(pf$planned_value_mm_usd[st %in% status_assessment], na.rm = TRUE),
-    committed_value_mm_usd = sum(pf$planned_value_mm_usd[committed], na.rm = TRUE),
-    committed_cost_mm_usd = sum(pf$planned_cost_mm_usd[committed], na.rm = TRUE),
-    value_to_cost = safe_ratio(sum(pf$planned_value_mm_usd[committed], na.rm = TRUE),
-                               sum(pf$planned_cost_mm_usd[committed], na.rm = TRUE)),
+    n_recorded = sum(st == "Recorded"),
+    n_evaluated = sum(evaluated),
+    n_delivered = sum(delivered),
+    n_audited = sum(audited),
+    pipeline_value_mm_usd = sum(pf$planned_value_mm_usd[st == "Recorded"], na.rm = TRUE),
+    evaluated_value_mm_usd = sum(pf$planned_value_mm_usd[evaluated], na.rm = TRUE),
+    delivered_value_mm_usd = sum(pf$planned_value_mm_usd[delivered], na.rm = TRUE),
+    value_to_cost = safe_ratio(sum(pf$planned_value_mm_usd[ev], na.rm = TRUE),
+                               sum(pf$planned_cost_mm_usd[ev], na.rm = TRUE)),
+    evaluated_cost_mm_usd = sum(pf$planned_cost_mm_usd[ev], na.rm = TRUE),
     planned_audited_mm_usd = sum(pf$planned_value_mm_usd[audited], na.rm = TRUE),
     realized_value_mm_usd = sum(pf$audited_value_mm_usd[audited], na.rm = TRUE),
     realization_rate_pct = 100 * safe_ratio(sum(pf$audited_value_mm_usd[audited], na.rm = TRUE),
                                             sum(pf$planned_value_mm_usd[audited], na.rm = TRUE)),
-    gate2_compliance_pct = 100 * safe_ratio(sum(req2 & pf$has_valuation), sum(req2)),
-    gate3_compliance_pct = 100 * safe_ratio(sum(req3 & reviewed), sum(req3)),
+    gate2_compliance_pct = 100 * safe_ratio(sum(req2 & pf$has_valuation & pf$validated), sum(req2)),
+    gate3_compliance_pct = 100 * safe_ratio(sum(req3 & approved), sum(req3)),
     median_lead_time_days = if (nrow(lt)) stats::median(lt$lead_time_days) else NA_real_,
     mean_adoption_pct = if (any(audited & !is.na(pf$adoption_pct)))
       mean(pf$adoption_pct[audited], na.rm = TRUE) else NA_real_,

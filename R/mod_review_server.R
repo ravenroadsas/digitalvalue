@@ -19,7 +19,8 @@ mod_review_server <- function(id, state) {
     output$tag <- shiny::renderUI({
       r <- state$row()
       if (is.null(r)) return(NULL)
-      pending <- r$status == "Expert review"
+      pending <- isTRUE(r$pending_step == "Expert review") ||
+        (r$req_review && !isTRUE(r$review_decision == "Approve") && r$status == "Recorded")
       htmltools::span(class = paste("dv-tag", if (pending) "dv-tag-gate"),
                       if (pending) "required \u00b7 pending" else if (r$req_review) "required" else "not required")
     })

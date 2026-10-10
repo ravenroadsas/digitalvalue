@@ -7,16 +7,20 @@ pattern,activity,process_phase
 ^initiative-select$,Select initiative,Navigation
 ^initiative-stage$,Switch lifecycle view,Navigation
 ^initiative-new$,Start registration,1 Registration & RICE
-^initiative-(act_.*|decision_comment)$,Record workflow decision,4 Decision
+^initiative-(act_.*|decision_comment)$,Record delivery,5 Delivery
 ^initiative-register-(save|update)$,Save registration & RICE,1 Registration & RICE
 ^initiative-register-,Edit registration & RICE,1 Registration & RICE
+^initiative-valuation-(validator|request_comment|send)$,Send 4MC to validator,3 4MC validation
+^initiative-valuation-(validate|request_changes|decision_comment)$,Validate 4MC,3 4MC validation
 ^initiative-valuation-add$,Add 4MC calculation,2 4MC valuation
 ^initiative-valuation-delete$,Delete 4MC calculation,2 4MC valuation
 ^initiative-valuation-,Edit 4MC calculation,2 4MC valuation
-^initiative-review-save$,Record expert review,3 Expert review
-^initiative-review-,Edit expert review,3 Expert review
-^initiative-audit-save$,Record value audit,5 Value audit
-^initiative-audit-,Edit value audit,5 Value audit
+^initiative-review-save$,Record expert review,4 Expert review
+^initiative-review-,Edit expert review,4 Expert review
+^initiative-audit-save$,Record value audit,6 Value audit
+^initiative-audit-,Edit value audit,6 Value audit
+^portfolio-(highlight|clear|table_rows_selected)$,Highlight initiative,Portfolio monitoring
+^portfolio-open$,Open initiative,Navigation
 ^portfolio-.*_rows_selected$,Select initiative,Navigation
 ^portfolio-,Review portfolio,Portfolio monitoring
 ^models-.*_(publish|activate)$,Publish value model,Administration

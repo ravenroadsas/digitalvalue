@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_gates.R
 \name{compute_portfolio}
 \alias{compute_portfolio}
-\title{Enrich the portfolio with gates, readiness and derived status}
+\title{Enrich the portfolio with gates, pending steps and derived status}
 \usage{
 compute_portfolio(portfolio, cfg)
 }
@@ -13,12 +13,12 @@ compute_portfolio(portfolio, cfg)
 }
 \value{
 Data frame with extra columns \code{planned_value_mm_usd},
-\code{planned_cost_mm_usd}, \code{has_rice}, \code{has_valuation}, \code{req_valuation},
-\code{req_review}, \code{derived_status}, \code{rice_rank}.
+\code{planned_cost_mm_usd}, \code{has_rice}, \code{has_valuation}, \code{validated},
+\code{req_valuation}, \code{req_review}, \code{pending_step}, \code{derived_status}, \code{rice_rank}.
 }
 \description{
 The ex-ante value (\code{planned_value_mm_usd}) is the expert-review value when
 the review approved the initiative, otherwise the 4MC estimate (P, R, M, T).
 The ex-ante cost (\code{planned_cost_mm_usd}) is the approved review cost, else
-the 4MC cost estimate (metric C), else the cost entered at registration.
+the 4MC cost estimate (metric C), else a legacy registration cost.
 }

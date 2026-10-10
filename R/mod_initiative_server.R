@@ -33,7 +33,7 @@ mod_initiative_server <- function(id, state) {
     shiny::observeEvent(input$new, {
       session$userData$new_mode <- TRUE
       state$selected(NULL)
-      state$stage("appraisal")
+      state$stage("evaluation")
     })
     shiny::observeEvent(state$stage(), bslib::nav_select("stage", state$stage()))
     shiny::observeEvent(input$stage, if (!identical(input$stage, state$stage())) state$stage(input$stage))
@@ -43,9 +43,12 @@ mod_initiative_server <- function(id, state) {
       if (is.null(r)) return(htmltools::span(class = "dv-muted", "New initiative \u2013 fill in registration and RICE below."))
       htmltools::tagList(
         status_badge(r$status),
+        if (!is.na(r$pending_step))
+          htmltools::span(class = "dv-tag dv-tag-gate", paste("next:", r$pending_step)),
         htmltools::span(class = "dv-headline-meta",
-          sprintf("%s \u00b7 %s \u00b7 registered by %s on %s", r$business_unit %||% "\u2013",
-                  r$owner %||% "\u2013", r$created_by, substr(r$created_at, 1, 10))))
+          sprintf("%s \u00b7 owner %s \u00b7 registered by %s on %s", r$business_unit %||% "\u2013",
+                  user_label(r$owner %||% "\u2013", state$users()), r$created_by,
+                  substr(r$created_at, 1, 10))))
     })
 
     output$stepper <- shiny::renderUI({
@@ -53,42 +56,45 @@ mod_initiative_server <- function(id, state) {
       if (is.null(r)) return(NULL)
       st <- lifecycle_steps(r)
       phase <- function(ph) htmltools::div(class = "dv-phase",
-        htmltools::div(class = "dv-phase-label", if (ph == "Appraisal") "Appraisal \u00b7 pre-execution"
-                                                  else "Realisation \u00b7 post-execution"),
+        htmltools::div(class = "dv-phase-label", if (ph == "Evaluation") "Evaluation \u00b7 before delivery"
+                                                  else "Realisation \u00b7 after delivery"),
         htmltools::tags$ol(class = "dv-steps", lapply(which(st$phase == ph), function(i)
           htmltools::tags$li(class = st$state[i],
             htmltools::span(class = "dv-step-n", st$step[i]),
             htmltools::span(class = "dv-step-label", st$label[i]),
             htmltools::span(class = "dv-step-note", st$note[i])))))
-      htmltools::div(class = "dv-stepper", phase("Appraisal"), phase("Realisation"))
+      htmltools::div(class = "dv-stepper", phase("Evaluation"), phase("Realisation"))
     })
 
-    action_labels <- c(prioritize = "Prioritize", reject = "Reject", start = "Start execution",
-                       deprioritize = "Back to ready", close = "Close execution", reopen = "Re-open")
+    # delivery: the owner or a superuser marks an evaluated initiative delivered
     output$workflow <- shiny::renderUI({
       r <- state$row()
       if (is.null(r)) return(NULL)
-      acts <- allowed_actions(r$status)
-      if (!state$can("decide") || !length(acts)) return(NULL)
-      htmltools::div(class = "dv-decision",
-        htmltools::span(class = "dv-decision-label", "Decision"),
-        shiny::textInput(ns("decision_comment"), NULL, placeholder = "Comment (optional)", width = "320px"),
-        lapply(names(acts), function(a)
-          shiny::actionButton(ns(paste0("act_", a)), action_labels[[a]],
-                              class = paste("btn-sm", if (a %in% c("prioritize", "start", "close"))
-                                "btn-primary" else "btn-outline-secondary"))),
-        if (r$status %in% status_assessment && r$status != "Ready")
-          htmltools::span(class = "dv-muted", "Complete the pending appraisal steps to enable prioritisation."))
+      if (r$status == "Evaluated" && state$can("deliver", r)) {
+        return(htmltools::div(class = "dv-decision",
+          htmltools::span(class = "dv-decision-label", "Delivery"),
+          shiny::textInput(ns("decision_comment"), NULL, placeholder = "Comment (optional)", width = "320px"),
+          shiny::actionButton(ns("act_deliver"), "Mark as delivered", class = "btn-sm btn-primary"),
+          htmltools::span(class = "dv-muted", "Opens the value audit.")))
+      }
+      if (r$status == "Delivered" && state$can("undeliver", r)) {
+        return(htmltools::div(class = "dv-decision",
+          htmltools::span(class = "dv-decision-label", "Delivery"),
+          shiny::textInput(ns("decision_comment"), NULL, placeholder = "Comment (optional)", width = "320px"),
+          shiny::actionButton(ns("act_undeliver"), "Revert delivery", class = "btn-sm btn-outline-secondary")))
+      }
+      NULL
     })
-    lapply(names(action_labels), function(a) {
-      shiny::observeEvent(input[[paste0("act_", a)]], {
+    for (a in c("deliver", "undeliver")) local({
+      act <- a
+      shiny::observeEvent(input[[paste0("act_", act)]], {
         r <- state$row()
-        target <- allowed_actions(r$status)[a]
-        if (is.na(target) || !state$can("decide")) return()
+        target <- allowed_actions(r$status)[act]
+        if (is.na(target) || !state$can(act, r)) return()
         db_set_status(state$con, r$id, unname(target), state$user$user,
                       if (nzchar(input$decision_comment %||% "")) input$decision_comment else NA)
         state$refresh()
-        if (target %in% c("In execution", "Closed")) state$stage("realisation")
+        if (target == "Delivered") state$stage("realisation")
         shiny::showNotification(sprintf("%s \u2192 %s", r$id, target), type = "message")
       }, ignoreInit = TRUE)
     })

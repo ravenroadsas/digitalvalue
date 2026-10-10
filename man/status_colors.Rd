@@ -10,6 +10,6 @@ status_colors()
 Named character vector.
 }
 \description{
-One hue: initiatives in appraisal are light, prioritised and in-execution
-initiatives are the darkest so they stand out.
+One hue: recorded initiatives are light, evaluated and delivered ones are
+the darkest so they stand out.
 }
