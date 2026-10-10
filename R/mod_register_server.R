@@ -73,11 +73,8 @@ mod_register_server <- function(id, state, new_mode = function() FALSE) {
       lab <- interval_labels(rec$level %||% 0.8)
       need_val <- requires_valuation(a$effort, a$score, cfg)
       htmltools::tagList(
-        htmltools::div(class = "dv-formula", sprintf(
-          "RICE = log10(%s) \u00d7 %s \u00d7 %s / %s = %.2f \u00d7 %s \u00d7 %s / %s = %.2f",
-          format(a$users, big.mark = ","), a$impact, a$confidence, a$effort, a$reach_value,
-          rice_weight(a$impact, "impact", cfg), rice_weight(a$confidence, "confidence", cfg),
-          rice_weight(a$effort, "effort", cfg), a$score)),
+        callout(type = "info", title = "RICE score",
+          htmltools::div(class = "dv-score", fmt_num(a$score, 2))),
         htmltools::div(class = "dv-estimate",
           htmltools::div(class = "dv-estimate-label", "Anticipated ex-ante value"),
           if (is.na(est$predicted)) htmltools::div(class = "dv-muted", "No calibrated model published yet.")

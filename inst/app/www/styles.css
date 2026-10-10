@@ -119,3 +119,4 @@ table.dataTable tbody tr.selected > * { box-shadow: inset 0 0 0 9999px var(--c70
 .dataTables_wrapper .pagination .active .page-link { background: var(--c800); border-color: var(--c800); color: #fff; }
 .dataTables_wrapper .dataTables_filter label { font-size: 10.5px; }
 .dataTables_wrapper .dataTables_filter input { font-size: 11px; padding: 1px 4px; }
+.dv-score { font-size: 20px; font-weight: 600; color: var(--c900); line-height: 1.2; }
