@@ -18,9 +18,9 @@ derive_status(
 
 \item{has_rice}{Logical, RICE recorded.}
 
-\item{req_val}{Logical, 4M valuation required.}
+\item{req_val}{Logical, 4MC valuation required.}
 
-\item{has_valuation}{Logical, at least one 4M line.}
+\item{has_valuation}{Logical, at least one 4MC line.}
 
 \item{req_rev}{Logical, expert review required.}
 

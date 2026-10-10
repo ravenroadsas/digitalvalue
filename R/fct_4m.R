@@ -1,4 +1,4 @@
-# 4M valuation: four value metrics used across the lifecycle (4M estimate,
+# 4MC valuation: four value metrics used across the lifecycle (4MC estimate,
 # expert review and post-execution value audit)
 #   P - Production : average yearly incremental BOPD
 #   R - Reserves   : MMbbl, by category (1P, 2P, 3P, contingent)
@@ -8,7 +8,7 @@
 # a parameter specification (drives the UI), a formula (returns the metric and
 # a human-readable trace) and is monetised with the configuration parameters.
 
-#' 4M metric definitions
+#' 4MC metric definitions
 #'
 #' Four value metrics (P, R, M, T) plus the cost metric C. Cost is tracked
 #' alongside value but never added to it: value totals use P, R, M, T only.
@@ -35,7 +35,7 @@ fmt <- function(x, digits = 2) formatC(x, format = "f", digits = digits, big.mar
 x_ <- " \u00d7 "
 minus_ <- " \u2212 "
 
-#' Registry of 4M calculation methods
+#' Registry of 4MC calculation methods
 #'
 #' @param cfg Configuration list (used for the reserve categories).
 #' @return Named list of methods. Each method has `id`, `metric`, `label`,
@@ -206,7 +206,7 @@ time_value_usd_hour <- function(cfg) {
   p$avg_salary_usd_year / p$work_hours_year * p$time_productivity_coef
 }
 
-#' Monetise a 4M metric (mm USD)
+#' Monetise a 4MC metric (mm USD)
 #'
 #' * P: BOPD x days/yr x netback (annual)
 #' * R: MMbbl x value per barrel of the category (one-off)
@@ -232,11 +232,11 @@ m4_monetize <- function(metric, value, cfg, category = NULL) {
     M = value,
     T = value * 1000 * time_value_usd_hour(cfg) / 1e6,
     C = value,
-    stop("Unknown 4M metric: ", metric)
+    stop("Unknown 4MC metric: ", metric)
   )
 }
 
-#' Run a 4M calculation
+#' Run a 4MC calculation
 #'
 #' @param method Method id (see [m4_methods()]).
 #' @param params Named list of parameters; missing ones take the defaults.
@@ -246,7 +246,7 @@ m4_monetize <- function(metric, value, cfg, category = NULL) {
 #' @export
 m4_calculate <- function(method, params, cfg) {
   methods <- m4_methods(cfg)
-  if (!method %in% names(methods)) stop("Unknown 4M method: ", method)
+  if (!method %in% names(methods)) stop("Unknown 4MC method: ", method)
   m <- methods[[method]]
   p <- list()
   for (spec in m$params) {
@@ -267,8 +267,8 @@ m4_calculate <- function(method, params, cfg) {
                       else paste0(res$formula_text, " \u2192 ", fmt(mm, 3), " mm USD"))
 }
 
-#' Summarise 4M lines by metric
-#' @param lines Data frame of 4M lines (see [db_get_m4_lines()]).
+#' Summarise 4MC lines by metric
+#' @param lines Data frame of 4MC lines (see [db_get_m4_lines()]).
 #' @return Data frame with one row per metric: `metric`, `label`, `unit`,
 #'   `value`, `value_mm_usd`, `n_lines`.
 #' @export
@@ -284,7 +284,7 @@ m4_summary <- function(lines) {
   out
 }
 
-#' Monetary value of a set of 4M figures (expert review, audit)
+#' Monetary value of a set of 4MC figures (expert review, audit)
 #'
 #' @param values Named list `P` (BOPD), `R` (MMbbl), `category` (reserve
 #'   category), `M` (mm USD), `T` (khours), `C` (cost, mm USD). Missing

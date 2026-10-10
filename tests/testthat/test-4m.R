@@ -16,7 +16,7 @@ test_that("missing parameters take defaults and non-numeric fails", {
   expect_equal(r$params$hours_week, 2)
   expect_equal(r$value, 10 * 2 * 46 / 1000)
   expect_error(m4_calculate("t_users", list(n_users = "abc"), cfg), "numeric")
-  expect_error(m4_calculate("nope", list(), cfg), "Unknown 4M method")
+  expect_error(m4_calculate("nope", list(), cfg), "Unknown 4MC method")
 })
 
 test_that("monetisation per metric", {
@@ -27,7 +27,7 @@ test_that("monetisation per metric", {
   expect_equal(time_value_usd_hour(cfg), 95000 / 1800 * 3)
   expect_equal(m4_monetize("T", 1, cfg), 1000 * 95000 / 1800 * 3 / 1e6)
   expect_error(m4_monetize("R", 1, cfg, "9P"), "category")
-  expect_error(m4_monetize("X", 1, cfg), "Unknown 4M metric")
+  expect_error(m4_monetize("X", 1, cfg), "Unknown 4MC metric")
 })
 
 test_that("every registered method computes with its defaults", {
@@ -58,7 +58,7 @@ test_that("m4_summary aggregates by metric", {
   expect_equal(sum(m4_summary(NULL)$value_mm_usd), 0)
 })
 
-test_that("direct 4M figures are monetised like the calculation lines", {
+test_that("direct 4MC figures are monetised like the calculation lines", {
   cfg <- test_cfg()
   v <- m4_value(list(P = 100, R = 2, category = "1P", M = 0.5, T = 1), cfg)
   expect_equal(v$by_metric[["P"]], m4_monetize("P", 100, cfg))
@@ -70,7 +70,7 @@ test_that("direct 4M figures are monetised like the calculation lines", {
                reserve_values(cfg)[[1]])
 })
 
-test_that("4M figures implied by calculation lines keep the reserve category", {
+test_that("4MC figures implied by calculation lines keep the reserve category", {
   cfg <- test_cfg()
   con <- test_con()
   id <- reg(con, cfg)
@@ -110,7 +110,7 @@ test_that("cost lines do not count as a valuation and feed the planned cost", {
   expect_equal(pf$plan_c, 2)
   expect_equal(pf$plan_value_mm_usd, 0)
   expect_false(pf$has_valuation)
-  expect_equal(pf$planned_cost_mm_usd, 2)   # 4M cost overrides the registration cost
+  expect_equal(pf$planned_cost_mm_usd, 2)   # 4MC cost overrides the registration cost
   expect_true(pf$req_review)                # cost 2 >= review gate 1
   db_add_m4_line(con, id, m4_calculate("m_direct", list(mm_usd = 1), cfg))
   pf <- compute_portfolio(db_portfolio(con), cfg)

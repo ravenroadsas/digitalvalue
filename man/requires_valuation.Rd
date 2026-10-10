@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_gates.R
 \name{requires_valuation}
 \alias{requires_valuation}
-\title{Is a 4M valuation required (valuation gate)?}
+\title{Is a 4MC valuation required (valuation gate)?}
 \usage{
 requires_valuation(effort, score, cfg)
 }

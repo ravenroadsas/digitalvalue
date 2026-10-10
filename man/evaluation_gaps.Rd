@@ -15,7 +15,7 @@ Data frame \code{id}, \code{name}, \code{valuation}, \code{review}, \code{audit}
 }
 \description{
 An evaluation is \emph{missing} when the gates require it and it has not been
-recorded: a 4M valuation above the valuation gate, an expert review above
+recorded: a 4MC valuation above the valuation gate, an expert review above
 the review gate (a "Rework" decision is still pending), a value audit after
 closure. Rejected initiatives have nothing missing.
 }

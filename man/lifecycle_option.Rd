@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_plots.R
 \name{lifecycle_option}
 \alias{lifecycle_option}
-\title{ECharts option: 4M estimate vs expert review vs audit, per metric (mm USD)}
+\title{ECharts option: 4MC estimate vs expert review vs audit, per metric (mm USD)}
 \usage{
 lifecycle_option(lc)
 }
@@ -13,5 +13,5 @@ lifecycle_option(lc)
 An ECharts option list.
 }
 \description{
-ECharts option: 4M estimate vs expert review vs audit, per metric (mm USD)
+ECharts option: 4MC estimate vs expert review vs audit, per metric (mm USD)
 }

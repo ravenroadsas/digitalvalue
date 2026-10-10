@@ -18,7 +18,7 @@ Data frame with extra columns \code{planned_value_mm_usd},
 }
 \description{
 The ex-ante value (\code{planned_value_mm_usd}) is the expert-review value when
-the review approved the initiative, otherwise the 4M estimate (P, R, M, T).
+the review approved the initiative, otherwise the 4MC estimate (P, R, M, T).
 The ex-ante cost (\code{planned_cost_mm_usd}) is the approved review cost, else
-the 4M cost estimate (metric C), else the cost entered at registration.
+the 4MC cost estimate (metric C), else the cost entered at registration.
 }

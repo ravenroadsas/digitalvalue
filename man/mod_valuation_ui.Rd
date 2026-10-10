@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_valuation_ui.R
 \name{mod_valuation_ui}
 \alias{mod_valuation_ui}
-\title{4M valuation UI (step 2)}
+\title{4MC valuation UI (step 2)}
 \usage{
 mod_valuation_ui(id)
 }
@@ -10,5 +10,5 @@ mod_valuation_ui(id)
 \item{id}{Module id.}
 }
 \description{
-4M valuation UI (step 2)
+4MC valuation UI (step 2)
 }

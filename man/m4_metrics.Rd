@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_4m.R
 \name{m4_metrics}
 \alias{m4_metrics}
-\title{4M metric definitions}
+\title{4MC metric definitions}
 \usage{
 m4_metrics()
 }

@@ -1,4 +1,4 @@
-#' Expert review UI (step 3, manual evaluation with the same 4M metrics)
+#' Expert review UI (step 3, manual evaluation with the same 4MC metrics)
 #' @param id Module id.
 #' @export
 mod_review_ui <- function(id) {
@@ -15,14 +15,14 @@ mod_review_ui <- function(id) {
         shiny::uiOutput(ns("preview")),
         shiny::actionButton(ns("save"), "Record expert review", class = "btn-primary btn-sm")),
       htmltools::div(
-        htmltools::div(class = "dv-section", "4M estimate vs expert review"),
+        htmltools::div(class = "dv-section", "4MC estimate vs expert review"),
         DT::DTOutput(ns("compare")),
         htmltools::div(class = "dv-section", "Review history"),
         DT::DTOutput(ns("history"))))
   )
 }
 
-#' Inputs for a set of 4M figures (shared by expert review and audit)
+#' Inputs for a set of 4MC figures (shared by expert review and audit)
 #' @param ns Namespace function.
 #' @return UI tags.
 #' @export
@@ -41,7 +41,7 @@ m4_inputs <- function(ns) {
   )
 }
 
-#' Fill 4M inputs from a list of figures
+#' Fill 4MC inputs from a list of figures
 #' @param session Module session.
 #' @param v Named list `P`, `R`, `M`, `T`, `C`, `category`.
 #' @export
@@ -55,8 +55,8 @@ update_m4_inputs <- function(session, v) {
     shiny::updateSelectInput(session, "category", selected = v$category)
 }
 
-#' 4M figures implied by the calculation lines of an initiative
-#' @param lines 4M calculation lines.
+#' 4MC figures implied by the calculation lines of an initiative
+#' @param lines 4MC calculation lines.
 #' @return Named list `P`, `R`, `M`, `T`, `C`, `category`.
 #' @export
 m4_from_lines <- function(lines) {

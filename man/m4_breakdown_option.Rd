@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_plots.R
 \name{m4_breakdown_option}
 \alias{m4_breakdown_option}
-\title{ECharts option: value breakdown by 4M metric for one initiative}
+\title{ECharts option: value breakdown by 4MC metric for one initiative}
 \usage{
 m4_breakdown_option(summary)
 }
@@ -13,5 +13,5 @@ m4_breakdown_option(summary)
 An ECharts option list.
 }
 \description{
-ECharts option: value breakdown by 4M metric for one initiative
+ECharts option: value breakdown by 4MC metric for one initiative
 }

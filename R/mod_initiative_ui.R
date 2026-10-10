@@ -1,6 +1,6 @@
 #' Initiative tab UI: select or register an initiative and follow its lifecycle
 #'
-#' Appraisal (pre-execution): registration & RICE, 4M valuation, expert
+#' Appraisal (pre-execution): registration & RICE, 4MC valuation, expert
 #' review, decision. Realisation (post-execution): execution and value audit.
 #' @param id Module id.
 #' @export

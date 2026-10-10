@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_review_ui.R
 \name{mod_review_ui}
 \alias{mod_review_ui}
-\title{Expert review UI (step 3, manual evaluation with the same 4M metrics)}
+\title{Expert review UI (step 3, manual evaluation with the same 4MC metrics)}
 \usage{
 mod_review_ui(id)
 }
@@ -10,5 +10,5 @@ mod_review_ui(id)
 \item{id}{Module id.}
 }
 \description{
-Expert review UI (step 3, manual evaluation with the same 4M metrics)
+Expert review UI (step 3, manual evaluation with the same 4MC metrics)
 }

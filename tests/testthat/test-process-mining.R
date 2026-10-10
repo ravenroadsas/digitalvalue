@@ -30,10 +30,10 @@ test_that("consecutive events collapse into activity instances with idle gaps", 
 
 test_that("business log and exported event log", {
   h <- data.frame(initiative_id = "DV-0001", from_status = c(NA, "Registered"),
-                  to_status = c("Registered", "4M valuation"), changed_by = "u1",
+                  to_status = c("Registered", "4MC valuation"), changed_by = "u1",
                   changed_at = c("2026-01-01 09:00:00", "2026-01-01 10:01:00"), comment = NA)
   b <- build_business_log(h)
-  expect_equal(b$activity, c("Register initiative", "Enter 4M valuation"))
+  expect_equal(b$activity, c("Register initiative", "Enter 4MC valuation"))
   a <- build_activity_log(raw_events(), test_cfg()$event_map)
   e <- export_event_log(a, b)
   expect_equal(nrow(e), 2 * nrow(a) + nrow(b))

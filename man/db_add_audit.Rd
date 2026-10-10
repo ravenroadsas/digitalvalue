@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_db.R
 \name{db_add_audit}
 \alias{db_add_audit}
-\title{Record a post-execution value audit: actual 4M figures plus adoption}
+\title{Record a post-execution value audit: actual 4MC figures plus adoption}
 \usage{
 db_add_audit(
   con,
@@ -39,5 +39,5 @@ db_add_audit(
 The audit id.
 }
 \description{
-Record a post-execution value audit: actual 4M figures plus adoption
+Record a post-execution value audit: actual 4MC figures plus adoption
 }

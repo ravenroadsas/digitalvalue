@@ -30,7 +30,7 @@ mod_audit_server <- function(id, state) {
         "In execution" = callout(type = "info", title = "In execution",
                                  "Close execution from the decision bar to record the value audit."),
         "Closed" = callout(type = "medium", title = "Value audit pending",
-          if (state$can("audit")) "Record the actual 4M figures and adoption."
+          if (state$can("audit")) "Record the actual 4MC figures and adoption."
           else "The value audit is recorded by superusers."),
         "Audited" = callout(type = "low", title = "Audited", "Realised value recorded."),
         callout(type = "info", title = r$status, "Realisation starts once the initiative is prioritized."))
@@ -46,11 +46,11 @@ mod_audit_server <- function(id, state) {
       rr <- realization_pct(ac, r$planned_value_mm_usd)
       htmltools::div(class = "dv-kpis",
         kpi_tile("Ex-ante value", fmt_num(r$planned_value_mm_usd, 2, " mm$"),
-                 if (isTRUE(r$review_decision == "Approve")) "expert review" else "4M estimate"),
+                 if (isTRUE(r$review_decision == "Approve")) "expert review" else "4MC estimate"),
         kpi_tile("Anticipated realised", fmt_num(est$predicted, 2, " mm$"),
                  if (is.na(est$predicted)) "no published model"
                  else sprintf("%s\u2013%s %s \u2013 %s", lab[1], lab[2], fmt_num(est$low, 2), fmt_num(est$high, 2))),
-        kpi_tile("Audited value", fmt_num(ac, 2, " mm$"), "actual 4M", "strong"),
+        kpi_tile("Audited value", fmt_num(ac, 2, " mm$"), "actual 4MC", "strong"),
         kpi_tile("Realisation", fmt_num(rr, 0, "%"), "audited / ex-ante"),
         kpi_tile("Adoption", fmt_num(r$adoption_pct, 0, "%"), "of intended users"))
     })
@@ -103,7 +103,7 @@ mod_audit_server <- function(id, state) {
     output$chart <- echarts4r::renderEcharts4r(echart_from_option(lifecycle_option(lifecycle())))
     output$table <- DT::renderDT({
       lc <- lifecycle()
-      dt_compact(data.frame(Metric = lc$label, Unit = lc$unit, `4M estimate` = round(lc$estimate, 3),
+      dt_compact(data.frame(Metric = lc$label, Unit = lc$unit, `4MC estimate` = round(lc$estimate, 3),
                             Review = round(lc$review, 3), Audited = round(lc$actual, 3),
                             `Real. %` = round(lc$realization_pct, 0), check.names = FALSE),
                  dom = "t", selection = "none", ordering = FALSE)

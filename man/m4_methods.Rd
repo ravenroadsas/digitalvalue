@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_4m.R
 \name{m4_methods}
 \alias{m4_methods}
-\title{Registry of 4M calculation methods}
+\title{Registry of 4MC calculation methods}
 \usage{
 m4_methods(cfg)
 }
@@ -15,5 +15,5 @@ Named list of methods. Each method has \code{id}, \code{metric}, \code{label},
 \code{list(value, formula_text)}.
 }
 \description{
-Registry of 4M calculation methods
+Registry of 4MC calculation methods
 }

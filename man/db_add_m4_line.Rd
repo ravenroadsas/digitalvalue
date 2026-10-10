@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_db.R
 \name{db_add_m4_line}
 \alias{db_add_m4_line}
-\title{Store a 4M calculation line}
+\title{Store a 4MC calculation line}
 \usage{
 db_add_m4_line(
   con,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_db.R
 \name{db_add_review}
 \alias{db_add_review}
-\title{Record an expert review (manual evaluation) with its own 4M figures}
+\title{Record an expert review (manual evaluation) with its own 4MC figures}
 \usage{
 db_add_review(
   con,
@@ -40,5 +40,5 @@ optionally \code{C} (cost, used when \code{cost_mm_usd} is missing).}
 The review id.
 }
 \description{
-Record an expert review (manual evaluation) with its own 4M figures
+Record an expert review (manual evaluation) with its own 4MC figures
 }

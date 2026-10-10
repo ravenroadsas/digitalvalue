@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_review_ui.R
 \name{update_m4_inputs}
 \alias{update_m4_inputs}
-\title{Fill 4M inputs from a list of figures}
+\title{Fill 4MC inputs from a list of figures}
 \usage{
 update_m4_inputs(session, v)
 }
@@ -12,5 +12,5 @@ update_m4_inputs(session, v)
 \item{v}{Named list \code{P}, \code{R}, \code{M}, \code{T}, \code{C}, \code{category}.}
 }
 \description{
-Fill 4M inputs from a list of figures
+Fill 4MC inputs from a list of figures
 }

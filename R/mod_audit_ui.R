@@ -1,4 +1,4 @@
-#' Value audit UI (realisation, post-execution): actual 4M plus adoption
+#' Value audit UI (realisation, post-execution): actual 4MC plus adoption
 #' @param id Module id.
 #' @export
 mod_audit_ui <- function(id) {
@@ -7,7 +7,7 @@ mod_audit_ui <- function(id) {
     shiny::uiOutput(ns("status")),
     shiny::uiOutput(ns("tiles")),
     bslib::layout_columns(col_widths = c(5, 7),
-      box("Value audit \u00b7 actual 4M, cost and adoption", class = "dv-step-card",
+      box("Value audit \u00b7 actual 4MC, cost and adoption", class = "dv-step-card",
         htmltools::div(id = ns("form"),
           m4_inputs(ns),
           shiny::sliderInput(ns("adoption"), "Adoption (% of intended users actively using it)",
@@ -17,7 +17,7 @@ mod_audit_ui <- function(id) {
           shiny::uiOutput(ns("preview")),
           shiny::actionButton(ns("save"), "Record audit", class = "btn-primary btn-sm")),
         shiny::uiOutput(ns("locked"))),
-      box("4M across the lifecycle",
+      box("4MC across the lifecycle",
         echarts4r::echarts4rOutput(ns("chart"), height = "250px"),
         DT::DTOutput(ns("table")),
         htmltools::div(class = "dv-section", "Audit history"),

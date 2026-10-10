@@ -16,7 +16,7 @@ mono <- list(c050 = "#F5F7F9", c100 = "#E6EAEF", c200 = "#CDD5DE", c300 = "#A9B5
 #' @return Named character vector.
 #' @export
 status_colors <- function() {
-  c("Registered" = mono$c200, "4M valuation" = mono$c300, "Expert review" = mono$c400,
+  c("Registered" = mono$c200, "4MC valuation" = mono$c300, "Expert review" = mono$c400,
     "Ready" = mono$c500, "Prioritized" = mono$c700, "In execution" = mono$c900,
     "Closed" = mono$c600, "Audited" = mono$c600, "Rejected" = mono$c100)
 }
@@ -200,7 +200,7 @@ status_option <- function(pf) {
   )
 }
 
-#' ECharts option: 4M estimate vs expert review vs audit, per metric (mm USD)
+#' ECharts option: 4MC estimate vs expert review vs audit, per metric (mm USD)
 #' @param lc Output of [m4_lifecycle()].
 #' @return An ECharts option list.
 #' @export
@@ -215,13 +215,13 @@ lifecycle_option <- function(lc) {
     xAxis = list(type = "category", data = lc$label, axisLabel = list(interval = 0)),
     yAxis = list(type = "value", name = "mm USD", splitLine = list(lineStyle = list(color = mono$c100))),
     series = list(
-      list(name = "4M estimate", type = "bar", data = r(lc$estimate_mm_usd)),
+      list(name = "4MC estimate", type = "bar", data = r(lc$estimate_mm_usd)),
       list(name = "Expert review", type = "bar", data = r(lc$review_mm_usd)),
       list(name = "Audited", type = "bar", data = r(lc$actual_mm_usd)))
   )
 }
 
-#' ECharts option: value breakdown by 4M metric for one initiative
+#' ECharts option: value breakdown by 4MC metric for one initiative
 #' @param summary Output of [m4_summary()].
 #' @return An ECharts option list.
 #' @export

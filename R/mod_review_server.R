@@ -30,7 +30,7 @@ mod_review_server <- function(id, state) {
         if (!state$can("review")) callout(type = "info", "Expert reviews are recorded by superusers."))
     })
 
-    # pre-fill with the latest review, else with the 4M estimate
+    # pre-fill with the latest review, else with the 4MC estimate
     prefill <- shiny::reactive(list(state$selected(), nrow(lines()), nrow(reviews())))
     shiny::observeEvent(prefill(), {
       rv <- reviews(); r <- state$row()
@@ -41,7 +41,7 @@ mod_review_server <- function(id, state) {
                                        category = rv$r_category[1]))
       } else {
         v <- m4_from_lines(lines())
-        v$C <- r$planned_cost_mm_usd  # 4M cost estimate, else registration cost
+        v$C <- r$planned_cost_mm_usd  # 4MC cost estimate, else registration cost
         update_m4_inputs(session, v)
       }
     })
@@ -68,7 +68,7 @@ mod_review_server <- function(id, state) {
     output$compare <- DT::renderDT({
       rv <- reviews()
       lc <- m4_lifecycle(lines(), if (nrow(rv)) rv[1, ] else NULL, NULL, cfg)
-      dt_compact(data.frame(Metric = lc$label, Unit = lc$unit, `4M estimate` = round(lc$estimate, 3),
+      dt_compact(data.frame(Metric = lc$label, Unit = lc$unit, `4MC estimate` = round(lc$estimate, 3),
                             `Expert review` = round(lc$review, 3),
                             `Estimate mm$` = round(lc$estimate_mm_usd, 3),
                             `Review mm$` = round(lc$review_mm_usd, 3), check.names = FALSE),

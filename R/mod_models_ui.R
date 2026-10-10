@@ -6,7 +6,7 @@ mod_models_ui <- function(id) {
   htmltools::tagList(
     callout(type = "info", title = "Calibrated value models",
       "Two log-linear regressions chain the lifecycle: RICE inputs \u2192 ex-ante value (expert review, ",
-      "else 4M estimate), and ex-ante value \u2192 audited value. A candidate is fitted on the current data; ",
+      "else 4MC estimate), and ex-ante value \u2192 audited value. A candidate is fitted on the current data; ",
       "it is used in the app only once a superuser publishes it. Every published version is kept and can ",
       "be re-activated."),
     do.call(bslib::navset_underline, c(list(id = ns("kind")), lapply(names(value_model_kinds), function(k)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_valuation_server.R
 \name{mod_valuation_server}
 \alias{mod_valuation_server}
-\title{4M valuation server}
+\title{4MC valuation server}
 \usage{
 mod_valuation_server(id, state)
 }
@@ -12,5 +12,5 @@ mod_valuation_server(id, state)
 \item{state}{Shared application state.}
 }
 \description{
-4M valuation server
+4MC valuation server
 }

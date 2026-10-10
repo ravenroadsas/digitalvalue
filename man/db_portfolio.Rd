@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_db.R
 \name{db_portfolio}
 \alias{db_portfolio}
-\title{Portfolio: one row per initiative with RICE, 4M totals, review and audit}
+\title{Portfolio: one row per initiative with RICE, 4MC totals, review and audit}
 \usage{
 db_portfolio(con)
 }

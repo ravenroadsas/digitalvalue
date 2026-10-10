@@ -1,15 +1,15 @@
 key,value,unit,group,description
-netback_usd_bbl,35,USD/bbl,4M valuation,Net back per barrel used to monetise production
-days_per_year,365,days,4M valuation,Days used to annualise BOPD into barrels
-reserve_value_1P,10,USD/bbl,4M valuation,Value per barrel of 1P (proved) reserves
-reserve_value_2P,6,USD/bbl,4M valuation,Value per barrel of 2P (proved + probable) reserves
-reserve_value_3P,3,USD/bbl,4M valuation,Value per barrel of 3P (proved + probable + possible) reserves
-reserve_value_contingent,1,USD/bbl,4M valuation,Value per barrel of contingent resources
-avg_salary_usd_year,95000,USD/year,4M valuation,Average loaded salary per employee
-work_hours_year,1800,h/year,4M valuation,Working hours per employee per year
-time_productivity_coef,3,x,4M valuation,Value generated per salary dollar when saved time is redeployed to productive tasks
-gate2_effort_min,L,t-shirt,Gates,4M valuation required when effort is at least this size
-gate2_score_min,3,score,Gates,4M valuation required when RICE score is at least this value
+netback_usd_bbl,35,USD/bbl,4MC valuation,Net back per barrel used to monetise production
+days_per_year,365,days,4MC valuation,Days used to annualise BOPD into barrels
+reserve_value_1P,10,USD/bbl,4MC valuation,Value per barrel of 1P (proved) reserves
+reserve_value_2P,6,USD/bbl,4MC valuation,Value per barrel of 2P (proved + probable) reserves
+reserve_value_3P,3,USD/bbl,4MC valuation,Value per barrel of 3P (proved + probable + possible) reserves
+reserve_value_contingent,1,USD/bbl,4MC valuation,Value per barrel of contingent resources
+avg_salary_usd_year,95000,USD/year,4MC valuation,Average loaded salary per employee
+work_hours_year,1800,h/year,4MC valuation,Working hours per employee per year
+time_productivity_coef,3,x,4MC valuation,Value generated per salary dollar when saved time is redeployed to productive tasks
+gate2_effort_min,L,t-shirt,Gates,4MC valuation required when effort is at least this size
+gate2_score_min,3,score,Gates,4MC valuation required when RICE score is at least this value
 gate3_value_min_mm_usd,5,mm USD,Gates,Expert review required when the ex-ante value is at least this
 gate3_cost_min_mm_usd,1,mm USD,Gates,Expert review required when implementation cost is at least this
 value_model_min_n,8,#,Value model,Valued initiatives needed for the multivariable regression (simple RICE-value model below this)

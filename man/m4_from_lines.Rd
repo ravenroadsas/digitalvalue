@@ -2,16 +2,16 @@
 % Please edit documentation in R/mod_review_ui.R
 \name{m4_from_lines}
 \alias{m4_from_lines}
-\title{4M figures implied by the calculation lines of an initiative}
+\title{4MC figures implied by the calculation lines of an initiative}
 \usage{
 m4_from_lines(lines)
 }
 \arguments{
-\item{lines}{4M calculation lines.}
+\item{lines}{4MC calculation lines.}
 }
 \value{
 Named list \code{P}, \code{R}, \code{M}, \code{T}, \code{C}, \code{category}.
 }
 \description{
-4M figures implied by the calculation lines of an initiative
+4MC figures implied by the calculation lines of an initiative
 }

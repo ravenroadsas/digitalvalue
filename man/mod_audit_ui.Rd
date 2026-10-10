@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_audit_ui.R
 \name{mod_audit_ui}
 \alias{mod_audit_ui}
-\title{Value audit UI (realisation, post-execution): actual 4M plus adoption}
+\title{Value audit UI (realisation, post-execution): actual 4MC plus adoption}
 \usage{
 mod_audit_ui(id)
 }
@@ -10,5 +10,5 @@ mod_audit_ui(id)
 \item{id}{Module id.}
 }
 \description{
-Value audit UI (realisation, post-execution): actual 4M plus adoption
+Value audit UI (realisation, post-execution): actual 4MC plus adoption
 }

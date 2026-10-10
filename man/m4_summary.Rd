@@ -2,17 +2,17 @@
 % Please edit documentation in R/fct_4m.R
 \name{m4_summary}
 \alias{m4_summary}
-\title{Summarise 4M lines by metric}
+\title{Summarise 4MC lines by metric}
 \usage{
 m4_summary(lines)
 }
 \arguments{
-\item{lines}{Data frame of 4M lines (see \code{\link[=db_get_m4_lines]{db_get_m4_lines()}}).}
+\item{lines}{Data frame of 4MC lines (see \code{\link[=db_get_m4_lines]{db_get_m4_lines()}}).}
 }
 \value{
 Data frame with one row per metric: \code{metric}, \code{label}, \code{unit},
 \code{value}, \code{value_mm_usd}, \code{n_lines}.
 }
 \description{
-Summarise 4M lines by metric
+Summarise 4MC lines by metric
 }

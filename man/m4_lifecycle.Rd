@@ -2,12 +2,12 @@
 % Please edit documentation in R/fct_kpi.R
 \name{m4_lifecycle}
 \alias{m4_lifecycle}
-\title{4M figures of one initiative across the lifecycle}
+\title{4MC figures of one initiative across the lifecycle}
 \usage{
 m4_lifecycle(lines, review = NULL, audit = NULL, cfg)
 }
 \arguments{
-\item{lines}{4M calculation lines of the initiative.}
+\item{lines}{4MC calculation lines of the initiative.}
 
 \item{review}{Latest review row (or \code{NULL}).}
 
@@ -21,7 +21,7 @@ Data frame per metric: \code{metric}, \code{label}, \code{unit}, \code{estimate}
 \code{realization_pct} (actual vs review if any, else vs estimate).
 }
 \description{
-Compares, per metric (P, R, M, T and cost C), the 4M estimate (calculation
+Compares, per metric (P, R, M, T and cost C), the 4MC estimate (calculation
 lines), the expert review and the post-execution audit, in native units and
 mm USD. For C the realisation is actual cost / planned cost.
 }

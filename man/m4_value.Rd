@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_4m.R
 \name{m4_value}
 \alias{m4_value}
-\title{Monetary value of a set of 4M figures (expert review, audit)}
+\title{Monetary value of a set of 4MC figures (expert review, audit)}
 \usage{
 m4_value(values, cfg)
 }
@@ -18,5 +18,5 @@ List with \code{by_metric} (named mm USD vector, P/R/M/T/C), \code{total}
 (value: P + R + M + T), \code{cost} (C) and \code{value_to_cost}.
 }
 \description{
-Monetary value of a set of 4M figures (expert review, audit)
+Monetary value of a set of 4MC figures (expert review, audit)
 }

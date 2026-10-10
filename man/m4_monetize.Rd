@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_4m.R
 \name{m4_monetize}
 \alias{m4_monetize}
-\title{Monetise a 4M metric (mm USD)}
+\title{Monetise a 4MC metric (mm USD)}
 \usage{
 m4_monetize(metric, value, cfg, category = NULL)
 }

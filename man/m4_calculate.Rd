@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_4m.R
 \name{m4_calculate}
 \alias{m4_calculate}
-\title{Run a 4M calculation}
+\title{Run a 4MC calculation}
 \usage{
 m4_calculate(method, params, cfg)
 }
@@ -18,5 +18,5 @@ List with \code{method}, \code{metric}, \code{params}, \code{value}, \code{unit}
 \code{value_mm_usd}, \code{formula_text}.
 }
 \description{
-Run a 4M calculation
+Run a 4MC calculation
 }

@@ -29,7 +29,7 @@ test_that("portfolio KPIs on demo data", {
   expect_equal(s$status, status_all)
 })
 
-test_that("4M lifecycle compares estimate, review and audit", {
+test_that("4MC lifecycle compares estimate, review and audit", {
   cfg <- test_cfg()
   lines <- data.frame(metric = "P", result_value = 10, value_mm_usd = m4_monetize("P", 10, cfg))
   rv <- data.frame(p_bopd = 8, r_mmbbl = 0, r_category = "2P", m_mm_usd = 0.5, t_khours = 0,

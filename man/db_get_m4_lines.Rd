@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_db.R
 \name{db_get_m4_lines}
 \alias{db_get_m4_lines}
-\title{Read 4M calculation lines}
+\title{Read 4MC calculation lines}
 \usage{
 db_get_m4_lines(con, id = NULL)
 }
@@ -15,5 +15,5 @@ db_get_m4_lines(con, id = NULL)
 Data frame.
 }
 \description{
-Read 4M calculation lines
+Read 4MC calculation lines
 }

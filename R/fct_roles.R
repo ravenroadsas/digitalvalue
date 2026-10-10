@@ -1,7 +1,7 @@
 # User levels ------------------------------------------------------------------
 #   contributor : everyone. Can register an initiative with its RICE (once);
 #                 the record is then locked for them. Read access elsewhere.
-#   superuser   : edits registrations and RICE, 4M valuation, expert review,
+#   superuser   : edits registrations and RICE, 4MC valuation, expert review,
 #                 workflow decisions, value audit, model calibration, admin.
 #
 # Superusers are identified from the Posit Connect identity: members of the
@@ -17,7 +17,7 @@ permission_matrix <- function() {
     action = c("register", "edit_registration", "valuate", "review", "decide",
                "audit", "calibrate", "admin"),
     label = c("Register an initiative with its RICE", "Edit a registration / RICE after saving",
-              "Record 4M valuation", "Record expert review", "Workflow decisions",
+              "Record 4MC valuation", "Record expert review", "Workflow decisions",
               "Record value audit", "Calibrate and publish value models", "Administration tabs"),
     contributor = c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE),
     superuser = TRUE,

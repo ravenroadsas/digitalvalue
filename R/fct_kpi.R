@@ -87,12 +87,12 @@ status_summary <- function(pf) {
     stringsAsFactors = FALSE, row.names = NULL)
 }
 
-#' 4M figures of one initiative across the lifecycle
+#' 4MC figures of one initiative across the lifecycle
 #'
-#' Compares, per metric (P, R, M, T and cost C), the 4M estimate (calculation
+#' Compares, per metric (P, R, M, T and cost C), the 4MC estimate (calculation
 #' lines), the expert review and the post-execution audit, in native units and
 #' mm USD. For C the realisation is actual cost / planned cost.
-#' @param lines 4M calculation lines of the initiative.
+#' @param lines 4MC calculation lines of the initiative.
 #' @param review Latest review row (or `NULL`).
 #' @param audit Latest audit row (or `NULL`).
 #' @param cfg Configuration list.

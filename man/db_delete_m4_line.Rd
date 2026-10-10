@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_db.R
 \name{db_delete_m4_line}
 \alias{db_delete_m4_line}
-\title{Delete a 4M calculation line}
+\title{Delete a 4MC calculation line}
 \usage{
 db_delete_m4_line(con, line_id)
 }
@@ -12,5 +12,5 @@ db_delete_m4_line(con, line_id)
 \item{line_id}{Line id.}
 }
 \description{
-Delete a 4M calculation line
+Delete a 4MC calculation line
 }

@@ -1,7 +1,7 @@
 # Calibrated value models ----------------------------------------------------------
 # Two log-linear regressions chain the lifecycle:
 #
-#   rice_to_review  : RICE inputs  -> ex-ante value (expert review, else 4M)
+#   rice_to_review  : RICE inputs  -> ex-ante value (expert review, else 4MC)
 #     log(value)  = b0 + b1 log10(users) + b2 log(impact) + b3 log(confidence)
 #                      + b4 log(effort)
 #   review_to_audit : ex-ante value -> audited (realised) value

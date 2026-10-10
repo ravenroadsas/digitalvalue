@@ -106,12 +106,20 @@ db_migrations <- list(
   list(table = "audits", column = "c_mm_usd", type = "DOUBLE")
 )
 
+# Renamed values (idempotent): the "4M valuation" status became "4MC valuation".
+db_value_migrations <- c(
+  "UPDATE initiatives SET status = '4MC valuation' WHERE status = '4M valuation'",
+  "UPDATE status_history SET to_status = '4MC valuation' WHERE to_status = '4M valuation'",
+  "UPDATE status_history SET from_status = '4MC valuation' WHERE from_status = '4M valuation'"
+)
+
 db_migrate <- function(con) {
   for (m in db_migrations) {
     if (!m$column %in% DBI::dbListFields(con, m$table)) {
       DBI::dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN %s %s", m$table, m$column, m$type))
     }
   }
+  for (sql in db_value_migrations) DBI::dbExecute(con, sql)
   invisible(TRUE)
 }
 
@@ -312,9 +320,9 @@ db_register_initiative <- function(con, fields, rice, user = "unknown", time = S
 #' @export
 db_get_rice <- function(con) db_query(con, "SELECT * FROM rice")
 
-# 4M valuation - calculation lines ---------------------------------------------
+# 4MC valuation - calculation lines ---------------------------------------------
 
-#' Store a 4M calculation line
+#' Store a 4MC calculation line
 #'
 #' Each line keeps the method, the full parameter set (JSON), the
 #' human-readable formula and a free comment, so that the valuation can be
@@ -340,7 +348,7 @@ db_add_m4_line <- function(con, id, calc, comment = NA, user = "unknown", time =
   line_id
 }
 
-#' Delete a 4M calculation line
+#' Delete a 4MC calculation line
 #' @param con A DBI connection.
 #' @param line_id Line id.
 #' @export
@@ -348,7 +356,7 @@ db_delete_m4_line <- function(con, line_id) {
   db_exec(con, "DELETE FROM m4_lines WHERE line_id = ?", list(line_id))
 }
 
-#' Read 4M calculation lines
+#' Read 4MC calculation lines
 #' @param con A DBI connection.
 #' @param id Optional initiative id.
 #' @return Data frame.
@@ -366,7 +374,7 @@ m4_frame <- function(v) {
              m_mm_usd = na_num(v$M), t_khours = na_num(v$T), stringsAsFactors = FALSE)
 }
 
-#' Record an expert review (manual evaluation) with its own 4M figures
+#' Record an expert review (manual evaluation) with its own 4MC figures
 #' @param con A DBI connection.
 #' @param id Initiative id.
 #' @param decision `"Approve"`, `"Rework"` or `"Reject"`.
@@ -405,7 +413,7 @@ db_get_reviews <- function(con, id = NULL) {
 
 # Value audit (post execution) ----------------------------------------------------
 
-#' Record a post-execution value audit: actual 4M figures plus adoption
+#' Record a post-execution value audit: actual 4MC figures plus adoption
 #' @param con A DBI connection.
 #' @param id Initiative id.
 #' @param values Named list `P`, `R`, `category`, `M`, `T`, `C` (actual, native units).
@@ -510,7 +518,7 @@ db_active_value_model <- function(con, kind) {
 
 # Portfolio view (aggregation pushed to the database) ---------------------------
 
-#' Portfolio: one row per initiative with RICE, 4M totals, review and audit
+#' Portfolio: one row per initiative with RICE, 4MC totals, review and audit
 #'
 #' Aggregations run in the database engine (columnar in DuckDB) instead of in
 #' the Shiny R process.

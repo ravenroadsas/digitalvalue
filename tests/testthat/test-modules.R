@@ -23,7 +23,7 @@ reg_inputs <- function(session) {
                     confidence = "High", effort = "L", rationale = "r")
 }
 
-test_that("full lifecycle: register -> 4M -> review -> decision -> audit", {
+test_that("full lifecycle: register -> 4MC -> review -> decision -> audit", {
   cfg <- test_cfg()
   con <- test_con()
   state <- make_state(con, cfg)
@@ -33,7 +33,7 @@ test_that("full lifecycle: register -> 4M -> review -> decision -> audit", {
     session$setInputs(save = 1)
   })
   shiny::isolate(expect_equal(state$selected(), "DV-0001"))
-  expect_equal(db_get_initiatives(con, "DV-0001")$status, "4M valuation")
+  expect_equal(db_get_initiatives(con, "DV-0001")$status, "4MC valuation")
   expect_equal(db_get_rice(con)$effort, "L")
 
   shiny::testServer(mod_valuation_server, args = list(state = state), {

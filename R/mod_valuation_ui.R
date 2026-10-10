@@ -1,9 +1,9 @@
-#' 4M valuation UI (step 2)
+#' 4MC valuation UI (step 2)
 #' @param id Module id.
 #' @export
 mod_valuation_ui <- function(id) {
   ns <- shiny::NS(id)
-  box("2 \u00b7 4M valuation", class = "dv-step-card", right = shiny::uiOutput(ns("tag"), inline = TRUE),
+  box("2 \u00b7 4MC valuation", class = "dv-step-card", right = shiny::uiOutput(ns("tag"), inline = TRUE),
     shiny::uiOutput(ns("gate")),
     bslib::layout_columns(col_widths = c(4, 8),
       htmltools::div(id = ns("calculator"),

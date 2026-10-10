@@ -23,7 +23,7 @@ mod_portfolio_server <- function(id, state) {
         kpi_tile("Adoption", fmt_num(k$mean_adoption_pct, 0, "%"), "mean, audited initiatives"),
         kpi_tile("Gate compliance", sprintf("%s / %s", fmt_num(k$gate2_compliance_pct, 0, "%"),
                                             fmt_num(k$gate3_compliance_pct, 0, "%")),
-                 "4M valuation / expert review done"),
+                 "4MC valuation / expert review done"),
         kpi_tile("Decision lead time", fmt_num(k$median_lead_time_days, 0, " d"),
                  "median, registration \u2192 decision"),
         kpi_tile("Open alerts", k$n_alerts, "pending process actions"))
@@ -48,7 +48,7 @@ mod_portfolio_server <- function(id, state) {
             htmltools::tags$li(htmltools::span(class = "dv-gap-id", g$id[i]), " \u00b7 ", g$name[i]))))
       }
       boxes <- list(
-        box_for("valuation", "4M valuation", "Above the valuation gate, no 4M valuation recorded:"),
+        box_for("valuation", "4MC valuation", "Above the valuation gate, no 4MC valuation recorded:"),
         box_for("review", "Expert review", "Above the review gate, no expert review decision:"),
         box_for("audit", "Value audit", "Execution closed, realised value not audited:"))
       boxes <- Filter(Negate(is.null), boxes)
@@ -71,7 +71,7 @@ mod_portfolio_server <- function(id, state) {
     table_data <- shiny::reactive({
       pf <- state$portfolio(); est <- estimates(); g <- gaps()
       data.frame(ID = pf$id, Initiative = pf$name, Unit = pf$business_unit, Status = pf$status,
-                 `4M` = g$valuation, Review = g$review, Audit = g$audit,
+                 `4MC` = g$valuation, Review = g$review, Audit = g$audit,
                  RICE = round(pf$score, 2), Rank = pf$rice_rank, Effort = pf$effort,
                  `Est. mm$` = round(est$predicted, 2),
                  `Ex-ante mm$` = ifelse(pf$planned_value_mm_usd > 0, round(pf$planned_value_mm_usd, 2), NA),
@@ -86,7 +86,7 @@ mod_portfolio_server <- function(id, state) {
         DT::formatStyle("Status", fontWeight = "600",
                         backgroundColor = DT::styleEqual(names(cols), unname(cols)),
                         color = DT::styleEqual(names(cols), unname(text))) |>
-        DT::formatStyle(c("4M", "Review", "Audit"),
+        DT::formatStyle(c("4MC", "Review", "Audit"),
                         backgroundColor = DT::styleEqual("missing", "#FFE7B0"),
                         color = DT::styleEqual(c("missing", "done", "n/a"), c("#7A4A00", mono$c900, mono$c300)),
                         fontWeight = DT::styleEqual("missing", "600"))

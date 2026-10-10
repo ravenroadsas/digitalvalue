@@ -1,5 +1,5 @@
 test_that("status groups and colours highlight prioritized and executing", {
-  expect_equal(plot_group(c("Prioritized", "In execution", "4M valuation", "Ready", "Audited", "Rejected")),
+  expect_equal(plot_group(c("Prioritized", "In execution", "4MC valuation", "Ready", "Audited", "Rejected")),
                c("Prioritized", "In execution", "In appraisal", "Ready for decision",
                  "Closed / audited", "Rejected"))
   expect_true(all(status_all %in% names(status_colors())))

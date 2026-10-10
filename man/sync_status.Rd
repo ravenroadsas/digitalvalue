@@ -17,6 +17,6 @@ sync_status(con, cfg, user = "system")
 Ids whose status changed.
 }
 \description{
-Called after any appraisal record is saved (registration, 4M, review) so
+Called after any appraisal record is saved (registration, 4MC, review) so
 that the stored status always reflects what is pending.
 }

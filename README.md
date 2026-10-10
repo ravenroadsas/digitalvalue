@@ -16,15 +16,15 @@ Superusers also get an **Admin** menu: Value models, Process log and Parameters.
 | View | Step | What is recorded | Who | Required when |
 |---|---|---|---|---|
 | **Appraisal** (pre-execution) | 1 Registration & RICE | Name, description, owner, unit, cost, and the RICE inputs, saved in one form | **Everyone**. The record is then locked; only a superuser can change it | Always |
-| | 2 4M valuation | Calculation lines per metric (P, R, M, T), each with its formula, parameters and comment | Superuser | Effort ≥ L or RICE score ≥ 3 (*valuation gate*) |
-| | 3 Expert review | Manual evaluation: decision (Approve / Rework / Reject) with its **own 4M figures** and validated cost | Superuser | Ex-ante value ≥ 5 mm USD or cost ≥ 1 mm USD (*review gate*) |
+| | 2 4MC valuation | Calculation lines per metric (P, R, M, T and cost C), each with its formula, parameters and comment | Superuser | Effort ≥ L or RICE score ≥ 3 (*valuation gate*) |
+| | 3 Expert review | Manual evaluation: decision (Approve / Rework / Reject) with its **own 4MC figures**, including the validated cost C | Superuser | Ex-ante value ≥ 5 mm USD or cost ≥ 1 mm USD (*review gate*) |
 | | 4 Decision | Prioritize or reject | Superuser | — |
 | **Realisation** (post-execution) | 5 Execution | Start, then close | Superuser | — |
-| | 6 Value audit | **Actual 4M figures plus adoption** (% of the intended users actually using the solution) | Superuser | After closure |
+| | 6 Value audit | **Actual 4MC figures (including actual cost) plus adoption** (% of the intended users actually using the solution) | Superuser | After closure |
 
-The status always shows the next pending appraisal step (`Registered` → `4M valuation` → `Expert review` → `Ready`) until a decision is taken (`Prioritized`, `In execution`, `Closed`, `Audited`, `Rejected`). It is recalculated after every save, and every change is written to `status_history`.
+The status always shows the next pending appraisal step (`Registered` → `4MC valuation` → `Expert review` → `Ready`) until a decision is taken (`Prioritized`, `In execution`, `Closed`, `Audited`, `Rejected`). It is recalculated after every save, and every change is written to `status_history`.
 
-The **ex-ante value** of an initiative is the expert-review value when the review approved it, otherwise the 4M estimate.
+The **ex-ante value** of an initiative is the expert-review value when the review approved it, otherwise the 4MC estimate.
 
 ## User levels
 
@@ -32,7 +32,7 @@ The **ex-ante value** of an initiative is the expert-review value when the revie
 |---|:-:|:-:|
 | Register an initiative with its RICE | ✓ | ✓ |
 | Edit a registration or its RICE after saving | | ✓ |
-| 4M valuation, expert review, decisions, value audit | | ✓ |
+| 4MC valuation, expert review, decisions, value audit | | ✓ |
 | Calibrate and publish value models, Admin tabs | | ✓ |
 
 Superusers are identified from the Posit Connect login: members of the group in `DV_SUPERUSER_GROUP`, or users listed in `DV_SUPERUSERS` (comma-separated). When neither variable is set (local development), everyone is a superuser; `DV_DEV_ROLE=contributor` simulates a contributor. Forms a user cannot use are hidden or disabled, and every write is checked again on the server. The matrix is in `permission_matrix()` (`R/fct_roles.R`).
@@ -49,11 +49,13 @@ Superusers are identified from the Posit Connect login: members of the group in 
 | Confidence | Moonshot 0.2 · Low 0.5 · High 0.8 · Certain 1 |
 | Effort | XS 0.5 · S 1 · M 2 · L 4 · XL 8 |
 
-### 4M metrics
+### 4MC metrics
 
-The same metrics are used at every stage: the 4M valuation, the expert review and the value audit. There are four value metrics (P, R, M, T) and one cost metric (C). Cost is tracked next to value but **never added to it**. It gives the value/cost ratio, and its planned value feeds the cost side of the review gate. The planned cost is the approved review's C, else the 4M cost estimate, else the cost entered at registration.
+**4MC** = four value metrics (**P**roduction, **R**eserves, **M**onetary, **T**ime saved) plus **C**ost.
 
-| Metric | Calculation methods (4M valuation) | Converted to mm USD by |
+The same metrics are used at every stage: the 4MC valuation, the expert review and the value audit. There are four value metrics (P, R, M, T) and one cost metric (C). Cost is tracked next to value but **never added to it**. It gives the value/cost ratio, and its planned value feeds the cost side of the review gate. The planned cost is the approved review's C, else the 4MC cost estimate, else the cost entered at registration.
+
+| Metric | Calculation methods (4MC valuation) | Converted to mm USD by |
 |---|---|---|
 | **P** Production (avg yearly BOPD) | direct · jobs × rate × success-rate uplift · uptime gain · decline mitigation | BOPD × 365 × netback (35 USD/bbl), annual |
 | **R** Reserves (MMbbl) | direct · recovery-factor uplift on OOIP; category 1P / 2P / 3P / contingent | MMbbl × value per bbl of the category (10 / 6 / 3 / 1 USD/bbl), one-off |
@@ -61,7 +63,7 @@ The same metrics are used at every stage: the 4M valuation, the expert review an
 | **T** Time saved (khours) | direct · users × h/week × weeks · tasks × minutes saved | khours × 1000 × (salary / work hours) × productivity coefficient **3**, annual |
 | **C** Cost (mm USD) | capex + opex × years · effort (person-months) × rate + licences | as entered; kept separate from value |
 
-Each 4M calculation line stores its parameters as JSON together with the formula and a comment, so it can be traced and recomputed:
+Each 4MC calculation line stores its parameters as JSON together with the formula and a comment, so it can be traced and recomputed:
 
 ```
 [P] 10 jobs × 30 BOPD × (70% − 60%) = 30 BOPD → 0.383 mm USD
@@ -77,7 +79,7 @@ Two log-linear regressions chain the lifecycle (`R/fct_value_model.R`):
 
 | Model | Target | Predictors | Shown in |
 |---|---|---|---|
-| RICE → ex-ante value | Ex-ante value (expert review, else 4M estimate) | log10(users), log impact, log confidence, log effort | Registration form, Portfolio estimates and the "Value or estimate" chart view |
+| RICE → ex-ante value | Ex-ante value (expert review, else 4MC estimate) | log10(users), log impact, log confidence, log effort | Registration form, Portfolio estimates and the "Value or estimate" chart view |
 | Ex-ante → realised value | Audited value | log ex-ante value, log confidence, log effort | Expert review and Realisation views |
 
 * **Range**: the regression prediction interval, back-transformed from the log scale, reported as median and P10–P90 (`value_model_interval = 0.8`).
@@ -87,10 +89,10 @@ Two log-linear regressions chain the lifecycle (`R/fct_value_model.R`):
 ### Alerts and KPIs
 
 * **Missing evaluations** are the only thing shown in colour (amber):
-  * **Initiative tab:** the "next stage required" callouts. Registration & RICE shows whether a 4M valuation is needed; the 4M valuation card shows whether an expert review is needed. Pending required steps are tagged in amber.
-  * **Portfolio tab:** one callout per missing evaluation type (4M valuation, expert review, value audit), listing the initiatives concerned, plus amber "missing" cells in the register's 4M / Review / Audit columns.
+  * **Initiative tab:** the "next stage required" callouts. Registration & RICE shows whether a 4MC valuation is needed; the 4MC valuation card shows whether an expert review is needed. Pending required steps are tagged in amber.
+  * **Portfolio tab:** one callout per missing evaluation type (4MC valuation, expert review, value audit), listing the initiatives concerned, plus amber "missing" cells in the register's 4MC / Review / Audit columns.
 * **Alerts** list initiatives above a gate with a pending step, closed initiatives without an audit, and initiatives ready for a decision. Clicking an alert opens the initiative on the right view.
-* **Portfolio KPIs**: pipeline, committed and realised value; value/cost; realisation rate (audited ÷ ex-ante); mean adoption; gate compliance (share of required 4M valuations and reviews actually done); decision lead time; open alerts.
+* **Portfolio KPIs**: pipeline, committed and realised value; value/cost; realisation rate (audited ÷ ex-ante); mean adoption; gate compliance (share of required 4MC valuations and reviews actually done); decision lead time; open alerts.
 * **Prioritisation chart** (value vs effort, bubble size = reach): the y-axis is reach × impact × confidence (RICE without the effort divisor), the ex-ante value, or the value / model estimate. On the R × I × C view the RICE-score gate is drawn as a staircase (threshold × effort weight): initiatives above it pass the valuation gate. Single-hue palette, with prioritized initiatives as dark circles and initiatives in execution as the darkest diamonds.
 
 ## Architecture
@@ -134,9 +136,9 @@ Environment variables are used only for infrastructure and identity: `DV_DB_PATH
 * **Schema changes**: columns added after the first release are created in place when the app starts (`db_migrate()`), so existing databases keep working.
 * **Tables**:
   * `initiatives`, `rice`
-  * `m4_lines`: 4M calculation lines
-  * `reviews`: expert reviews with their 4M figures
-  * `audits`: actual 4M figures, actual cost and adoption
+  * `m4_lines`: 4MC calculation lines
+  * `reviews`: expert reviews with their 4MC figures
+  * `audits`: actual 4MC figures, actual cost and adoption
   * `value_models`: published model versions
   * `status_history`, `event_log`
 * **Migration to an enterprise database**: only `R/data_db.R` changes. Add a driver branch in `db_connect()` (e.g. `odbc::odbc()`). The SQL is ANSI with `?` placeholders (`sql_params()` rewrites them for PostgreSQL), and timestamps are ISO-8601 UTC text.
@@ -145,7 +147,7 @@ Environment variables are used only for infrastructure and identity: `DV_DB_PATH
 ## Process mining
 
 1. **Raw events**: input changes and navigation are captured in the browser, buffered, and sent every 5 s as one JSON input to `event_log`, together with the user, session and active initiative.
-2. **Mapped events**: input names are mapped to readable activities and lifecycle phases using regexes in `event_map.csv`. For example, `initiative-valuation-add` becomes "Add 4M calculation" in phase "2 4M valuation".
+2. **Mapped events**: input names are mapped to readable activities and lifecycle phases using regexes in `event_map.csv`. For example, `initiative-valuation-add` becomes "Add 4MC calculation" in phase "2 4MC valuation".
 3. **Activity instances**: consecutive events are grouped into activity instances with start and complete timestamps.
 4. **Business log**: status transitions.
 
@@ -159,7 +161,7 @@ Already in place:
 * **Value models**: published models are evaluated from stored coefficients, with no refitting per session.
 
 Proposed next steps:
-* **API**: a plumber API on Connect for the RICE / 4M / value-model engine, so other tools can use it.
+* **API**: a plumber API on Connect for the RICE / 4MC / value-model engine, so other tools can use it.
 * **Scheduled jobs**: run the KPI and process-mining aggregations as scheduled jobs and store the results as tables.
 * **Caching**: `bindCache()` on the portfolio query.
 

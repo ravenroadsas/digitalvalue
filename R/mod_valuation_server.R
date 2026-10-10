@@ -1,4 +1,4 @@
-#' 4M valuation server
+#' 4MC valuation server
 #' @param id Module id.
 #' @param state Shared application state.
 #' @export
@@ -28,13 +28,13 @@ mod_valuation_server <- function(id, state) {
       if (is.null(r)) return(callout(type = "info", "Register the initiative first."))
       gr <- gate_reasons(r, cfg)
       htmltools::tagList(
-        # requirement of the next stage, driven by the 4M value and the cost
+        # requirement of the next stage, driven by the 4MC value and the cost
         if (r$req_review) callout(type = "gate", title = "Next stage required \u00b7 expert review",
                                   paste(gr$review, collapse = " \u00b7 "))
         else callout(type = "low", sprintf(
           "Below the review gate (value < %s mm USD and cost < %s mm USD) \u2013 expert review not required.",
           cfg$params$gate3_value_min_mm_usd, cfg$params$gate3_cost_min_mm_usd)),
-        if (!state$can("valuate")) callout(type = "info", "4M valuation is recorded by superusers.")
+        if (!state$can("valuate")) callout(type = "info", "4MC valuation is recorded by superusers.")
         else if (!editable()) callout(type = "info", "Valuation is locked after the decision."))
     })
 
@@ -85,7 +85,7 @@ mod_valuation_server <- function(id, state) {
         kpi_tile("C \u00b7 Cost", fmt_num(cost, 2, " mm USD"),
                  sprintf("%d line(s) \u00b7 value/cost %s", s$n_lines[s$metric == "C"],
                          fmt_num(if (cost > 0 && value > 0) value / cost else NA, 1, "x"))),
-        kpi_tile("4M value", fmt_num(value, 2, " mm USD"), "P, M, T annual \u00b7 R one-off", "strong"))
+        kpi_tile("4MC value", fmt_num(value, 2, " mm USD"), "P, M, T annual \u00b7 R one-off", "strong"))
     })
 
     output$lines <- DT::renderDT({

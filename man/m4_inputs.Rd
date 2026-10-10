@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_review_ui.R
 \name{m4_inputs}
 \alias{m4_inputs}
-\title{Inputs for a set of 4M figures (shared by expert review and audit)}
+\title{Inputs for a set of 4MC figures (shared by expert review and audit)}
 \usage{
 m4_inputs(ns)
 }
@@ -13,5 +13,5 @@ m4_inputs(ns)
 UI tags.
 }
 \description{
-Inputs for a set of 4M figures (shared by expert review and audit)
+Inputs for a set of 4MC figures (shared by expert review and audit)
 }

@@ -41,7 +41,7 @@ test_that("initiative update, status changes and history", {
   expect_error(db_set_status(con, "DV-9999", "Ready"), "Unknown")
 })
 
-test_that("4M lines, expert reviews with 4M figures and audits with adoption", {
+test_that("4MC lines, expert reviews with 4MC figures and audits with adoption", {
   cfg <- test_cfg()
   con <- test_con()
   id <- reg(con, cfg)
@@ -130,7 +130,7 @@ test_that("sync_status derives statuses after each appraisal step", {
   con <- test_con()
   id <- reg(con, cfg, effort = "L", cost = 3)
   expect_equal(sync_status(con, cfg), id)
-  expect_equal(db_get_initiatives(con, id)$status, "4M valuation")
+  expect_equal(db_get_initiatives(con, id)$status, "4MC valuation")
   db_add_m4_line(con, id, m4_calculate("m_direct", list(mm_usd = 1), cfg))
   sync_status(con, cfg)
   expect_equal(db_get_initiatives(con, id)$status, "Expert review")
@@ -156,4 +156,15 @@ test_that("review cost defaults to the C figure; old databases are migrated", {
   expect_false("c_mm_usd" %in% DBI::dbListFields(con, "audits"))
   db_init(con)
   expect_true("c_mm_usd" %in% DBI::dbListFields(con, "audits"))
+})
+
+test_that("the legacy '4M valuation' status is renamed to '4MC valuation'", {
+  cfg <- test_cfg()
+  con <- test_con()
+  id <- reg(con, cfg)
+  db_set_status(con, id, "4M valuation", "u1")
+  db_init(con)
+  expect_equal(db_get_initiatives(con, id)$status, "4MC valuation")
+  h <- db_get_status_history(con)
+  expect_false(any(c(h$from_status, h$to_status) %in% "4M valuation"))
 })

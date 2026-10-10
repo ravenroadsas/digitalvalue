@@ -2,19 +2,19 @@
 #
 # Appraisal (pre-execution)
 #   1 Registration & RICE  - everyone; recorded at once
-#   2 4M valuation          - required above the valuation gate (effort / RICE)
+#   2 4MC valuation          - required above the valuation gate (effort / RICE)
 #   3 Expert review         - required above the review gate (value / cost)
 #   4 Decision              - prioritise / reject
 # Realisation (post-execution)
 #   5 Execution             - start / close
-#   6 Value audit           - actual 4M + adoption
+#   6 Value audit           - actual 4MC + adoption
 
 #' Initiative statuses
 #'
 #' Appraisal statuses are derived from the data (what is still pending);
 #' decision statuses are set explicitly by a workflow action.
 #' @export
-status_assessment <- c("Registered", "4M valuation", "Expert review", "Ready")
+status_assessment <- c("Registered", "4MC valuation", "Expert review", "Ready")
 
 #' @rdname status_assessment
 #' @export
@@ -28,7 +28,7 @@ status_all <- c(status_assessment, status_decision)
 #' @export
 review_decisions <- c("Approve", "Rework", "Reject")
 
-#' Is a 4M valuation required (valuation gate)?
+#' Is a 4MC valuation required (valuation gate)?
 #'
 #' Required when effort is at least `gate2_effort_min` or the RICE score is at
 #' least `gate2_score_min`.
@@ -84,8 +84,8 @@ gate_reasons <- function(row, cfg) {
 #' status is the first pending appraisal step, or "Ready" when complete.
 #' @param current Current status.
 #' @param has_rice Logical, RICE recorded.
-#' @param req_val Logical, 4M valuation required.
-#' @param has_valuation Logical, at least one 4M line.
+#' @param req_val Logical, 4MC valuation required.
+#' @param has_valuation Logical, at least one 4MC line.
 #' @param req_rev Logical, expert review required.
 #' @param review_decision Latest review decision (or `NA`).
 #' @return Character vector of statuses.
@@ -93,7 +93,7 @@ gate_reasons <- function(row, cfg) {
 derive_status <- function(current, has_rice, req_val, has_valuation, req_rev, review_decision) {
   review_decision[is.na(review_decision)] <- ""
   out <- ifelse(!has_rice, "Registered",
-         ifelse(req_val & !has_valuation, "4M valuation",
+         ifelse(req_val & !has_valuation, "4MC valuation",
          ifelse(req_rev & review_decision == "Reject", "Rejected",
          ifelse(req_rev & review_decision != "Approve", "Expert review", "Ready"))))
   keep <- current %in% status_decision
@@ -104,9 +104,9 @@ derive_status <- function(current, has_rice, req_val, has_valuation, req_rev, re
 #' Enrich the portfolio with gates, readiness and derived status
 #'
 #' The ex-ante value (`planned_value_mm_usd`) is the expert-review value when
-#' the review approved the initiative, otherwise the 4M estimate (P, R, M, T).
+#' the review approved the initiative, otherwise the 4MC estimate (P, R, M, T).
 #' The ex-ante cost (`planned_cost_mm_usd`) is the approved review cost, else
-#' the 4M cost estimate (metric C), else the cost entered at registration.
+#' the 4MC cost estimate (metric C), else the cost entered at registration.
 #' @param portfolio Output of [db_portfolio()].
 #' @param cfg Configuration list.
 #' @return Data frame with extra columns `planned_value_mm_usd`,
@@ -118,7 +118,7 @@ compute_portfolio <- function(portfolio, cfg) {
   approved <- !is.na(df$review_decision) & df$review_decision == "Approve"
   df$planned_value_mm_usd <- ifelse(approved & !is.na(df$review_value_mm_usd),
                                     df$review_value_mm_usd, df$plan_value_mm_usd)
-  # cost: approved review (C) > 4M cost estimate (C lines) > cost entered at registration
+  # cost: approved review (C) > 4MC cost estimate (C lines) > cost entered at registration
   df$planned_cost_mm_usd <- ifelse(approved & !is.na(df$review_cost_mm_usd), df$review_cost_mm_usd,
                             ifelse(!is.na(df$plan_c) & df$plan_c > 0, df$plan_c, df$cost_mm_usd))
   df$has_rice <- !is.na(df$score)
@@ -157,7 +157,7 @@ lifecycle_steps <- function(r) {
   reviewed <- !is.na(r$review_decision) && r$review_decision %in% c("Approve", "Reject")
   s <- data.frame(
     step = 1:6,
-    label = c("Registration & RICE", "4M valuation", "Expert review", "Decision",
+    label = c("Registration & RICE", "4MC valuation", "Expert review", "Decision",
               "Execution", "Value audit"),
     phase = c(rep("Appraisal", 4), rep("Realisation", 2)),
     state = c(
@@ -200,7 +200,7 @@ assessment_alerts <- function(pf) {
   }
   rows <- list(
     mk("Expert review", "high", "Above review gate \u2013 expert review required", "appraisal"),
-    mk("4M valuation", "medium", "Above valuation gate \u2013 4M valuation pending", "appraisal"),
+    mk("4MC valuation", "medium", "Above valuation gate \u2013 4MC valuation pending", "appraisal"),
     mk("Closed", "medium", "Closed \u2013 value audit pending", "realisation"),
     mk("Ready", "low", "Appraisal complete \u2013 ready for decision", "appraisal")
   )
@@ -211,7 +211,7 @@ assessment_alerts <- function(pf) {
 
 #' Synchronise stored statuses with the derived appraisal status
 #'
-#' Called after any appraisal record is saved (registration, 4M, review) so
+#' Called after any appraisal record is saved (registration, 4MC, review) so
 #' that the stored status always reflects what is pending.
 #' @param con A DBI connection.
 #' @param cfg Configuration list.
@@ -230,7 +230,7 @@ sync_status <- function(con, cfg, user = "system") {
 #' Evaluation coverage per initiative: done, missing or not applicable
 #'
 #' An evaluation is *missing* when the gates require it and it has not been
-#' recorded: a 4M valuation above the valuation gate, an expert review above
+#' recorded: a 4MC valuation above the valuation gate, an expert review above
 #' the review gate (a "Rework" decision is still pending), a value audit after
 #' closure. Rejected initiatives have nothing missing.
 #' @param pf Output of [compute_portfolio()].

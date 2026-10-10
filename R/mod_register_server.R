@@ -85,10 +85,10 @@ mod_register_server <- function(id, state, new_mode = function() FALSE) {
             htmltools::div(class = "dv-muted", sprintf("Model %s \u00b7 n = %d \u00b7 R\u00b2 %s \u00b7 published %s",
               rec$type, rec$n, fmt_num(rec$r2, 2), substr(rec$created_at %||% "", 1, 10))))),
         callout(type = if (need_val) "gate" else "low",
-          title = if (need_val) "Next stage required \u00b7 4M valuation" else "RICE is sufficient for a decision",
+          title = if (need_val) "Next stage required \u00b7 4MC valuation" else "RICE is sufficient for a decision",
           if (need_val) sprintf("Effort \u2265 %s or score \u2265 %s.", cfg$params$gate2_effort_min,
                                 cfg$params$gate2_score_min)
-          else "Below the valuation gate; a 4M valuation is optional.")
+          else "Below the valuation gate; a 4MC valuation is optional.")
       )
     })
 

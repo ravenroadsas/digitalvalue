@@ -8,9 +8,9 @@ pattern,activity,process_phase
 ^initiative-(act_.*|decision_comment)$,Record workflow decision,4 Decision
 ^initiative-register-(save|update)$,Save registration & RICE,1 Registration & RICE
 ^initiative-register-,Edit registration & RICE,1 Registration & RICE
-^initiative-valuation-add$,Add 4M calculation,2 4M valuation
-^initiative-valuation-delete$,Delete 4M calculation,2 4M valuation
-^initiative-valuation-,Edit 4M calculation,2 4M valuation
+^initiative-valuation-add$,Add 4MC calculation,2 4MC valuation
+^initiative-valuation-delete$,Delete 4MC calculation,2 4MC valuation
+^initiative-valuation-,Edit 4MC calculation,2 4MC valuation
 ^initiative-review-save$,Record expert review,3 Expert review
 ^initiative-review-,Edit expert review,3 Expert review
 ^initiative-audit-save$,Record value audit,5 Value audit
