@@ -7,12 +7,12 @@
 gate_reasons(row, cfg)
 }
 \arguments{
-\item{row}{One portfolio row (list or 1-row data frame), see \code{\link[=compute_portfolio]{compute_portfolio()}}.}
+\item{row}{One portfolio row, see \code{\link[=compute_portfolio]{compute_portfolio()}}.}
 
 \item{cfg}{Configuration list.}
 }
 \value{
-List with \code{phase2} and \code{phase3} character vectors.
+List with \code{valuation} and \code{review} character vectors.
 }
 \description{
 Human-readable reasons why a gate is triggered

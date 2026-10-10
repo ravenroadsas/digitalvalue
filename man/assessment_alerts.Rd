@@ -10,7 +10,8 @@ assessment_alerts(pf)
 \item{pf}{Output of \code{\link[=compute_portfolio]{compute_portfolio()}}.}
 }
 \value{
-Data frame \code{id}, \code{name}, \code{severity}, \code{alert}.
+Data frame \code{id}, \code{name}, \code{severity}, \code{alert}, \code{stage} (lifecycle
+view to open: \code{"appraisal"} or \code{"realisation"}).
 }
 \description{
 Alerts: initiatives passing evaluation criteria with pending actions

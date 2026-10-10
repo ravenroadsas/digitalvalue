@@ -21,7 +21,7 @@ status_decision
 status_all
 }
 \description{
-Assessment statuses are derived from the data (what is still pending);
+Appraisal statuses are derived from the data (what is still pending);
 decision statuses are set explicitly by a workflow action.
 }
 \keyword{datasets}

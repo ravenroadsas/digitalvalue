@@ -3,16 +3,22 @@
 # rendered with echarts4r. Rendering happens in the browser (client-side),
 # the R process only ships the JSON option.
 
-#' Colour palette per status
+#' Monochrome palette (slate), from lightest (`c050`) to darkest (`c900`)
+#' @export
+mono <- list(c050 = "#F5F7F9", c100 = "#E6EAEF", c200 = "#CDD5DE", c300 = "#A9B5C3",
+             c400 = "#8494A7", c500 = "#64768B", c600 = "#4B5D72", c700 = "#364A60",
+             c800 = "#24364A", c900 = "#142233")
+
+#' Shade per status
 #'
-#' Prioritised and in-execution initiatives are highlighted (green / blue);
-#' initiatives still in assessment are muted.
+#' One hue: initiatives in appraisal are light, prioritised and in-execution
+#' initiatives are the darkest so they stand out.
 #' @return Named character vector.
 #' @export
 status_colors <- function() {
-  c("Phase I" = "#9AA4AE", "Phase II" = "#C9A227", "Phase III" = "#D9822B",
-    "Ready" = "#6E8BA8", "Prioritized" = "#1E9E5A", "In execution" = "#1667D9",
-    "Closed" = "#7D6BC4", "Audited" = "#4B3F8C", "Rejected" = "#C0392B")
+  c("Registered" = mono$c200, "4M valuation" = mono$c300, "Expert review" = mono$c400,
+    "Ready" = mono$c500, "Prioritized" = mono$c700, "In execution" = mono$c900,
+    "Closed" = mono$c600, "Audited" = mono$c600, "Rejected" = mono$c100)
 }
 
 #' Chart group of a status (prioritisation scatter)
@@ -24,16 +30,21 @@ plot_group <- function(status) {
   ifelse(status == "In execution", "In execution",
   ifelse(status %in% c("Closed", "Audited"), "Closed / audited",
   ifelse(status == "Rejected", "Rejected",
-  ifelse(status == "Ready", "Ready for decision", "In assessment")))))
+  ifelse(status == "Ready", "Ready for decision", "In appraisal")))))
 }
 
-#' Group colours of the prioritisation scatter
-#' @return Named character vector.
+#' Shade and marker per scatter group
+#'
+#' Prioritized (dark circle) and In execution (darkest diamond) are labelled
+#' and drawn on top.
+#' @return Data frame `group`, `color`, `symbol`.
 #' @export
-group_colors <- function() {
-  c("In assessment" = "#9AA4AE", "Ready for decision" = "#E0A526",
-    "Prioritized" = "#1E9E5A", "In execution" = "#1667D9",
-    "Closed / audited" = "#7D6BC4", "Rejected" = "#D98880")
+group_style <- function() {
+  data.frame(group = c("In appraisal", "Ready for decision", "Prioritized", "In execution",
+                       "Closed / audited", "Rejected"),
+             color = c(mono$c300, mono$c500, mono$c700, mono$c900, mono$c400, mono$c200),
+             symbol = c("circle", "triangle", "circle", "diamond", "rect", "circle"),
+             stringsAsFactors = FALSE)
 }
 
 #' Data for the prioritisation scatter (value vs effort)
@@ -80,12 +91,13 @@ prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), 
                                   estimate = NULL) {
   y <- match.arg(y)
   d <- prioritization_data(pf, cfg, y, estimate)
-  cols <- group_colors()
+  gs <- group_style()
   lv <- rice_levels(cfg, "effort")
   ylab <- switch(y, score = "RICE score", value = "Value (mm USD)",
                  estimate = "Value / est. mm USD")
-  series <- lapply(names(cols), function(g) {
+  series <- lapply(gs$group, function(g) {
     s <- d[d$group == g, , drop = FALSE]
+    col <- gs$color[gs$group == g]
     strong <- g %in% c("Prioritized", "In execution")
     list(
       name = g, type = "scatter",
@@ -94,14 +106,15 @@ prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), 
         effort = s$effort[i], status = s$status[i], estimated = s$estimated[i],
         # hollow markers = value anticipated by the value model
         itemStyle = c(
-          if (s$estimated[i]) list(color = "#ffffff", borderColor = unname(cols[g]), borderWidth = 2,
+          if (s$estimated[i]) list(color = "#ffffff", borderColor = col, borderWidth = 2,
                                    borderType = "dashed", opacity = 1),
           if (!is.null(highlight) && s$id[i] == highlight) list(borderColor = "#111", borderWidth = 3)))),
       symbolSize = js("function (v) { return 8 + v[2] * 4; }"),
-      itemStyle = list(color = unname(cols[g]), opacity = if (strong) 0.95 else 0.6,
-                       borderColor = if (strong) "#0b2e1a" else "#ffffff",
-                       borderWidth = if (strong) 1.2 else 0.5),
-      label = list(show = strong, position = "right", fontSize = 9,
+      symbol = gs$symbol[gs$group == g],
+      itemStyle = list(color = col, opacity = if (strong) 1 else 0.85,
+                       borderColor = if (g == "Rejected") mono$c400 else "#ffffff",
+                       borderWidth = if (strong) 1.2 else 0.8),
+      label = list(show = strong, position = "right", fontSize = 9, color = mono$c900,
                    formatter = js("function (p) { return p.data.id; }")),
       z = if (strong) 3 else 2
     )
@@ -109,20 +122,20 @@ prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), 
   p <- cfg$params
   gate_x <- rice_ordinal(p$gate2_effort_min, "effort", cfg) - 0.5
   gate_y <- if (y == "score") p$gate2_score_min else p$gate3_value_min_mm_usd
-  gate_lbl <- if (y == "score") "Phase II gate (score)" else "Phase III gate (value)"
+  gate_lbl <- if (y == "score") "Valuation gate (score)" else "Review gate (value)"
   # gate lines go on the first non-empty series
   host <- which(vapply(series, function(s) length(s$data) > 0, logical(1)))[1]
   if (is.na(host)) host <- 1
   series[[host]]$markLine <- list(
     silent = TRUE, symbol = "none",
-    lineStyle = list(type = "dashed", color = "#C0392B", width = 1),
-    label = list(fontSize = 9, color = "#C0392B", position = "insideEndTop"),
+    lineStyle = list(type = "dashed", color = mono$c500, width = 1),
+    label = list(fontSize = 9, color = mono$c600, position = "insideEndTop"),
     data = list(list(yAxis = gate_y, name = gate_lbl, label = list(formatter = gate_lbl)),
-                list(xAxis = gate_x, name = "Phase II gate (effort)",
-                     label = list(formatter = "Phase II gate (effort)"))))
+                list(xAxis = gate_x, name = "Valuation gate (effort)",
+                     label = list(formatter = "Valuation gate (effort)"))))
   list(
-    color = unname(cols),
-    textStyle = list(fontSize = 10),
+    color = gs$color,
+    textStyle = list(fontSize = 10, color = mono$c700),
     grid = list(left = 50, right = 20, top = 40, bottom = 40),
     legend = list(top = 0, textStyle = list(fontSize = 10), itemWidth = 10, itemHeight = 10),
     tooltip = list(trigger = "item", formatter = js(
@@ -137,7 +150,7 @@ prioritization_option <- function(pf, cfg, y = c("score", "value", "estimate"), 
                    "function (v) { var l = ", jsonlite::toJSON(lv),
                    "; return Number.isInteger(v) ? (l[v - 1] || '') : ''; }"))),
     yAxis = list(type = "value", name = ylab, nameTextStyle = list(fontSize = 10),
-                 splitLine = list(lineStyle = list(color = "#e3e6ea"))),
+                 splitLine = list(lineStyle = list(color = mono$c100))),
     series = series
   )
 }
@@ -150,52 +163,56 @@ status_option <- function(pf) {
   s <- status_summary(pf)
   cols <- status_colors()
   list(
-    textStyle = list(fontSize = 10),
-    grid = list(left = 40, right = 50, top = 30, bottom = 50),
+    textStyle = list(fontSize = 10, color = mono$c700),
+    grid = list(left = 40, right = 50, top = 30, bottom = 55),
     legend = list(top = 0, textStyle = list(fontSize = 10)),
     tooltip = list(trigger = "axis"),
     xAxis = list(type = "category", data = s$status,
                  axisLabel = list(rotate = 30, fontSize = 9, interval = 0)),
-    yAxis = list(list(type = "value", name = "#", minInterval = 1),
+    yAxis = list(list(type = "value", name = "#", minInterval = 1,
+                      splitLine = list(lineStyle = list(color = mono$c100))),
                  list(type = "value", name = "mm USD", splitLine = list(show = FALSE))),
     series = list(
-      list(name = "Initiatives", type = "bar", barWidth = "55%",
+      list(name = "Initiatives", type = "bar", barWidth = "55%", itemStyle = list(color = mono$c600),
            data = lapply(seq_len(nrow(s)), function(i)
-             list(value = s$n[i], itemStyle = list(color = unname(cols[s$status[i]]))))),
-      list(name = "Planned value (mm USD)", type = "line", yAxisIndex = 1,
-           symbolSize = 6, lineStyle = list(color = "#333", width = 1),
-           itemStyle = list(color = "#333"), data = round(s$value_mm_usd, 2)))
+             list(value = s$n[i], itemStyle = list(color = unname(cols[s$status[i]]),
+                                                   borderColor = mono$c400, borderWidth = 0.5)))),
+      list(name = "Ex-ante value (mm USD)", type = "line", yAxisIndex = 1,
+           symbolSize = 6, lineStyle = list(color = mono$c900, width = 1),
+           itemStyle = list(color = mono$c900), data = round(s$value_mm_usd, 2)))
   )
 }
 
-#' ECharts option: planned vs actual value per PRMT metric
-#' @param pva Output of [plan_vs_actual()].
+#' ECharts option: 4M estimate vs expert review vs audit, per metric (mm USD)
+#' @param lc Output of [m4_lifecycle()].
 #' @return An ECharts option list.
 #' @export
-plan_actual_option <- function(pva) {
+lifecycle_option <- function(lc) {
+  r <- function(x) ifelse(is.na(x), 0, round(x, 3))
   list(
-    textStyle = list(fontSize = 10),
-    color = c("#6E8BA8", "#1E9E5A"),
+    textStyle = list(fontSize = 10, color = mono$c700),
+    color = c(mono$c300, mono$c600, mono$c900),
     grid = list(left = 50, right = 20, top = 30, bottom = 30),
     legend = list(top = 0, textStyle = list(fontSize = 10)),
     tooltip = list(trigger = "axis"),
-    xAxis = list(type = "category", data = pva$label, axisLabel = list(interval = 0)),
-    yAxis = list(type = "value", name = "mm USD"),
+    xAxis = list(type = "category", data = lc$label, axisLabel = list(interval = 0)),
+    yAxis = list(type = "value", name = "mm USD", splitLine = list(lineStyle = list(color = mono$c100))),
     series = list(
-      list(name = "Planned", type = "bar", data = round(pva$planned_mm_usd, 3)),
-      list(name = "Actual", type = "bar", data = round(pva$actual_mm_usd, 3)))
+      list(name = "4M estimate", type = "bar", data = r(lc$estimate_mm_usd)),
+      list(name = "Expert review", type = "bar", data = r(lc$review_mm_usd)),
+      list(name = "Audited", type = "bar", data = r(lc$actual_mm_usd)))
   )
 }
 
-#' ECharts option: value breakdown by PRMT metric for one initiative
-#' @param summary Output of [prmt_summary()].
+#' ECharts option: value breakdown by 4M metric for one initiative
+#' @param summary Output of [m4_summary()].
 #' @return An ECharts option list.
 #' @export
-prmt_breakdown_option <- function(summary) {
+m4_breakdown_option <- function(summary) {
   s <- summary[summary$value_mm_usd != 0, , drop = FALSE]
   list(
-    textStyle = list(fontSize = 10),
-    color = c("#1E9E5A", "#C9A227", "#1667D9", "#7D6BC4"),
+    textStyle = list(fontSize = 10, color = mono$c700),
+    color = c(mono$c900, mono$c600, mono$c400, mono$c200),
     tooltip = list(trigger = "item", formatter = "{b}: {c} mm USD ({d}%)"),
     series = list(list(
       type = "pie", radius = c("45%", "75%"),
@@ -211,11 +228,11 @@ prmt_breakdown_option <- function(summary) {
 #' @export
 phase_effort_option <- function(pe) {
   list(
-    textStyle = list(fontSize = 10),
-    color = c("#1667D9"),
-    grid = list(left = 150, right = 20, top = 20, bottom = 30),
+    textStyle = list(fontSize = 10, color = mono$c700),
+    color = c(mono$c700),
+    grid = list(left = 160, right = 20, top = 20, bottom = 30),
     tooltip = list(trigger = "axis"),
-    xAxis = list(type = "value", name = "minutes"),
+    xAxis = list(type = "value", name = "minutes", splitLine = list(lineStyle = list(color = mono$c100))),
     yAxis = list(type = "category", data = pe$process_phase, axisLabel = list(fontSize = 9)),
     series = list(list(name = "Minutes", type = "bar", data = round(pe$minutes, 1)))
   )

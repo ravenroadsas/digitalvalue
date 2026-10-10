@@ -2,16 +2,18 @@
 % Please edit documentation in R/fct_value_model.R
 \name{value_fit_option}
 \alias{value_fit_option}
-\title{ECharts option: predicted vs actual (multivariable model)}
+\title{ECharts option: predicted vs observed for a model record}
 \usage{
-value_fit_option(model)
+value_fit_option(assessed, kind)
 }
 \arguments{
-\item{model}{Output of \code{\link[=fit_value_model]{fit_value_model()}}.}
+\item{assessed}{Output of \code{\link[=assess_record]{assess_record()}} (\verb{$data}).}
+
+\item{kind}{Model kind.}
 }
 \value{
 An ECharts option list.
 }
 \description{
-ECharts option: predicted vs actual (multivariable model)
+ECharts option: predicted vs observed for a model record
 }

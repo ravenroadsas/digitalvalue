@@ -46,8 +46,8 @@ portfolio_kpis <- function(pf, history = NULL) {
   committed <- st %in% c("Prioritized", "In execution")
   audited <- st == "Audited"
   lt <- decision_lead_times(history)
-  req2 <- pf$req_phase2
-  req3 <- pf$req_phase3
+  req2 <- pf$req_valuation
+  req3 <- pf$req_review
   reviewed <- !is.na(pf$review_decision) & pf$review_decision %in% c("Approve", "Reject")
   list(
     n_total = nrow(pf),
@@ -68,6 +68,8 @@ portfolio_kpis <- function(pf, history = NULL) {
     gate2_compliance_pct = 100 * safe_ratio(sum(req2 & pf$has_valuation), sum(req2)),
     gate3_compliance_pct = 100 * safe_ratio(sum(req3 & reviewed), sum(req3)),
     median_lead_time_days = if (nrow(lt)) stats::median(lt$lead_time_days) else NA_real_,
+    mean_adoption_pct = if (any(audited & !is.na(pf$adoption_pct)))
+      mean(pf$adoption_pct[audited], na.rm = TRUE) else NA_real_,
     n_alerts = nrow(assessment_alerts(pf))
   )
 }
@@ -85,16 +87,35 @@ status_summary <- function(pf) {
     stringsAsFactors = FALSE, row.names = NULL)
 }
 
-#' Planned vs actual PRMT comparison for one initiative
-#' @param plan,actual PRMT lines for stage plan and actual.
-#' @return Data frame per metric with planned/actual value and mm USD and realisation.
+#' 4M figures of one initiative across the lifecycle
+#'
+#' Compares, per metric, the 4M estimate (calculation lines), the expert
+#' review and the post-execution audit, in native units and mm USD.
+#' @param lines 4M calculation lines of the initiative.
+#' @param review Latest review row (or `NULL`).
+#' @param audit Latest audit row (or `NULL`).
+#' @param cfg Configuration list.
+#' @return Data frame per metric: `metric`, `label`, `unit`, `estimate`,
+#'   `review`, `actual`, `estimate_mm_usd`, `review_mm_usd`, `actual_mm_usd`,
+#'   `realization_pct` (actual vs review if any, else vs estimate).
 #' @export
-plan_vs_actual <- function(plan, actual) {
-  p <- prmt_summary(plan)
-  a <- prmt_summary(actual)
-  data.frame(metric = p$metric, label = p$label, unit = p$unit,
-             planned = p$value, actual = a$value,
-             planned_mm_usd = p$value_mm_usd, actual_mm_usd = a$value_mm_usd,
-             realization_pct = realization_pct(a$value_mm_usd, p$value_mm_usd),
-             stringsAsFactors = FALSE)
+m4_lifecycle <- function(lines, review = NULL, audit = NULL, cfg) {
+  e <- m4_summary(lines)
+  vals <- function(row) {
+    if (is.null(row) || !nrow(row)) return(NULL)
+    list(P = row$p_bopd, R = row$r_mmbbl, category = row$r_category, M = row$m_mm_usd,
+         T = row$t_khours)
+  }
+  stage <- function(row) {
+    v <- vals(row)
+    if (is.null(v)) return(list(native = rep(NA_real_, 4), mm = rep(NA_real_, 4)))
+    native <- vapply(c("P", "R", "M", "T"), function(k) as.numeric(v[[k]] %||% NA), numeric(1))
+    list(native = unname(native), mm = unname(m4_value(v, cfg)$by_metric))
+  }
+  r <- stage(review); a <- stage(audit)
+  ref <- if (all(is.na(r$mm))) e$value_mm_usd else r$mm
+  data.frame(metric = e$metric, label = e$label, unit = e$unit,
+             estimate = e$value, review = r$native, actual = a$native,
+             estimate_mm_usd = e$value_mm_usd, review_mm_usd = r$mm, actual_mm_usd = a$mm,
+             realization_pct = realization_pct(a$mm, ref), stringsAsFactors = FALSE)
 }

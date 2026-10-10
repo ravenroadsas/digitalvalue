@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_audit_server.R
 \name{mod_audit_server}
 \alias{mod_audit_server}
-\title{Execution and audit server}
+\title{Value audit server}
 \usage{
 mod_audit_server(id, state)
 }
@@ -12,5 +12,5 @@ mod_audit_server(id, state)
 \item{state}{Shared application state.}
 }
 \description{
-Execution and audit server
+Value audit server
 }

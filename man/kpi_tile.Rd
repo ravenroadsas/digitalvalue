@@ -13,7 +13,7 @@ kpi_tile(label, value, sub = NULL, tone = "neutral")
 
 \item{sub}{Sub-text.}
 
-\item{tone}{One of \code{"neutral"}, \code{"good"}, \code{"warn"}, \code{"bad"}, \code{"info"}.}
+\item{tone}{\code{"neutral"} or \code{"strong"} (dark accent).}
 }
 \value{
 HTML tag.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_plots.R
 \name{status_colors}
 \alias{status_colors}
-\title{Colour palette per status}
+\title{Shade per status}
 \usage{
 status_colors()
 }
@@ -10,6 +10,6 @@ status_colors()
 Named character vector.
 }
 \description{
-Prioritised and in-execution initiatives are highlighted (green / blue);
-initiatives still in assessment are muted.
+One hue: initiatives in appraisal are light, prioritised and in-execution
+initiatives are the darkest so they stand out.
 }

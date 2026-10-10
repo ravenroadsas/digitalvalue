@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_db.R
 \name{db_get_reviews}
 \alias{db_get_reviews}
-\title{Read planning reviews}
+\title{Read expert reviews}
 \usage{
 db_get_reviews(con, id = NULL)
 }
@@ -15,5 +15,5 @@ db_get_reviews(con, id = NULL)
 Data frame.
 }
 \description{
-Read planning reviews
+Read expert reviews
 }

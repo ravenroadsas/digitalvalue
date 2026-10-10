@@ -2,16 +2,18 @@
 % Please edit documentation in R/data_db.R
 \name{db_get_audits}
 \alias{db_get_audits}
-\title{Read audits}
+\title{Read value audits}
 \usage{
-db_get_audits(con)
+db_get_audits(con, id = NULL)
 }
 \arguments{
 \item{con}{A DBI connection.}
+
+\item{id}{Optional initiative id.}
 }
 \value{
 Data frame.
 }
 \description{
-Read audits
+Read value audits
 }

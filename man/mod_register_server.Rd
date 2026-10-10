@@ -2,15 +2,18 @@
 % Please edit documentation in R/mod_register_server.R
 \name{mod_register_server}
 \alias{mod_register_server}
-\title{Registration server}
+\title{Registration & RICE server}
 \usage{
-mod_register_server(id, state)
+mod_register_server(id, state, new_mode = function() FALSE)
 }
 \arguments{
 \item{id}{Module id.}
 
 \item{state}{Shared application state.}
+
+\item{new_mode}{Function returning \code{TRUE} while registering a new initiative.}
 }
 \description{
-Registration server
+Everyone can register an initiative with its RICE. Once saved the record is
+locked; only superusers can edit it.
 }

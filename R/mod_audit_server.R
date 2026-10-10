@@ -1,104 +1,120 @@
-#' Execution and audit server
+#' Value audit server
 #' @param id Module id.
 #' @param state Shared application state.
 #' @export
 mod_audit_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
+    cfg <- state$cfg
+    shiny::updateSelectInput(session, "category", choices = names(reserve_values(cfg)))
+
     editable <- shiny::reactive({
       r <- state$row()
-      !is.null(r) && r$status %in% c("In execution", "Closed") && state$user$is_planning
+      !is.null(r) && state$can("audit") && r$status == "Closed"
     })
-    actual <- mod_prmt_editor_server("editor", state, "actual", enabled = editable)
-    plan <- shiny::reactive({
-      state$version()
-      id <- state$selected()
-      db_get_prmt_lines(state$con, if (is.null(id)) "" else id, "plan")
-    })
-    pva <- shiny::reactive(plan_vs_actual(plan(), actual()))
+    shiny::observe(shinyjs::toggle("form", condition = editable()))
 
-    queue <- shiny::reactive({
-      pf <- state$portfolio()
-      pf <- pf[pf$status %in% c("Prioritized", "In execution", "Closed", "Audited"), , drop = FALSE]
-      data.frame(ID = pf$id, Initiative = pf$name, Status = pf$status,
-                 `Planned mm$` = round(pf$planned_value_mm_usd, 2),
-                 `Actual mm$` = round(pf$actual_value_mm_usd, 2), check.names = FALSE)
-    })
-    output$queue <- DT::renderDT({
-      cols <- status_colors()
-      dt_compact(queue(), page_length = 8) |>
-        DT::formatStyle("Status", color = "#fff", fontWeight = "600",
-                        backgroundColor = DT::styleEqual(names(cols), unname(cols)))
-    })
-    shiny::observeEvent(input$queue_rows_selected, {
-      state$selected(queue()$ID[input$queue_rows_selected])
+    lines <- shiny::reactive({ state$version(); db_get_m4_lines(state$con, state$selected() %||% "") })
+    reviews <- shiny::reactive({ state$version(); db_get_reviews(state$con, state$selected() %||% "") })
+    audits <- shiny::reactive({ state$version(); db_get_audits(state$con, state$selected() %||% "") })
+    lifecycle <- shiny::reactive({
+      rv <- reviews(); au <- audits()
+      m4_lifecycle(lines(), if (nrow(rv)) rv[1, ] else NULL, if (nrow(au)) au[1, ] else NULL, cfg)
     })
 
-    output$gate <- shiny::renderUI({
+    output$status <- shiny::renderUI({
       r <- state$row()
-      if (is.null(r)) return(NULL)
-      if (!state$user$is_planning)
-        return(callout(type = "warning", "Only the planning group can audit realised value."))
+      if (is.null(r)) return(callout(type = "info", "Select an initiative."))
       switch(r$status,
-        "In execution" = callout(type = "info", title = paste(r$id, "in execution"),
-                                 "Actual metrics can be recorded; close the initiative to complete the audit."),
-        "Closed" = callout(type = "warning", title = paste(r$id, "\u00b7 audit pending"),
-                           "Record the actual P/R/M/T with the same formulas used in Phase II."),
-        "Audited" = callout(type = "success", title = paste(r$id, "audited"), "Audit completed."),
-        callout(type = "info", title = paste(r$id, "\u00b7", r$status),
-                "Audit is available once the initiative is in execution or closed."))
+        "Prioritized" = callout(type = "info", title = "Prioritized",
+                                "Start execution from the decision bar; the audit opens after closure."),
+        "In execution" = callout(type = "info", title = "In execution",
+                                 "Close execution from the decision bar to record the value audit."),
+        "Closed" = callout(type = "medium", title = "Value audit pending",
+          if (state$can("audit")) "Record the actual 4M figures and adoption."
+          else "The value audit is recorded by superusers."),
+        "Audited" = callout(type = "low", title = "Audited", "Realised value recorded."),
+        callout(type = "info", title = r$status, "Realisation starts once the initiative is prioritized."))
     })
 
     output$tiles <- shiny::renderUI({
-      d <- pva()
       r <- state$row()
-      # planned = planning-validated value when available, else Phase II total
-      pl <- if (is.null(r)) sum(d$planned_mm_usd) else r$planned_value_mm_usd
-      ac <- sum(d$actual_mm_usd)
-      rr <- realization_pct(ac, pl)
+      if (is.null(r)) return(NULL)
+      rec <- state$models()$review_to_audit
+      est <- predict_realised(rec, r$planned_value_mm_usd, r$confidence, r$effort, cfg)
+      lab <- interval_labels(rec$level %||% 0.8)
+      ac <- r$audited_value_mm_usd
+      rr <- realization_pct(ac, r$planned_value_mm_usd)
       htmltools::div(class = "dv-kpis",
-        kpi_tile("Planned value", fmt_num(pl, 2, " mm$"), "validated / Phase II", "info"),
-        kpi_tile("Actual value", fmt_num(ac, 2, " mm$"), "materialised", "good"),
-        kpi_tile("Realisation", fmt_num(rr, 0, "%"), "actual / planned",
-                 if (is.na(rr)) "neutral" else if (rr >= 90) "good" else if (rr >= 70) "warn" else "bad"),
-        kpi_tile("Gap", fmt_num(ac - pl, 2, " mm$"), "actual \u2212 planned"))
+        kpi_tile("Ex-ante value", fmt_num(r$planned_value_mm_usd, 2, " mm$"),
+                 if (isTRUE(r$review_decision == "Approve")) "expert review" else "4M estimate"),
+        kpi_tile("Anticipated realised", fmt_num(est$predicted, 2, " mm$"),
+                 if (is.na(est$predicted)) "no published model"
+                 else sprintf("%s\u2013%s %s \u2013 %s", lab[1], lab[2], fmt_num(est$low, 2), fmt_num(est$high, 2))),
+        kpi_tile("Audited value", fmt_num(ac, 2, " mm$"), "actual 4M", "strong"),
+        kpi_tile("Realisation", fmt_num(rr, 0, "%"), "audited / ex-ante"),
+        kpi_tile("Adoption", fmt_num(r$adoption_pct, 0, "%"), "of intended users"))
     })
 
-    output$pva <- echarts4r::renderEcharts4r(echart_from_option(plan_actual_option(pva())))
-    output$pva_table <- DT::renderDT({
-      d <- pva()
-      dt_compact(data.frame(Metric = d$label, Unit = d$unit, Planned = round(d$planned, 3),
-                            Actual = round(d$actual, 3), `Planned mm$` = round(d$planned_mm_usd, 3),
-                            `Actual mm$` = round(d$actual_mm_usd, 3),
-                            `Real. %` = round(d$realization_pct, 0), check.names = FALSE),
+    # pre-fill with the latest audit, else with the ex-ante figures
+    prefill <- shiny::reactive(list(state$selected(), nrow(audits()), nrow(reviews())))
+    shiny::observeEvent(prefill(), {
+      au <- audits(); rv <- reviews()
+      if (nrow(au)) {
+        update_m4_inputs(session, list(P = au$p_bopd[1], R = au$r_mmbbl[1], M = au$m_mm_usd[1],
+                                       T = au$t_khours[1], category = au$r_category[1]))
+        shiny::updateSliderInput(session, "adoption", value = au$adoption_pct[1])
+      } else if (nrow(rv)) {
+        update_m4_inputs(session, list(P = rv$p_bopd[1], R = rv$r_mmbbl[1], M = rv$m_mm_usd[1],
+                                       T = rv$t_khours[1], category = rv$r_category[1]))
+      } else {
+        update_m4_inputs(session, m4_from_lines(lines()))
+      }
+    })
+
+    values <- shiny::reactive(list(P = input$P, R = input$R, M = input$M, T = input$T,
+                                   category = input$category))
+    output$preview <- shiny::renderUI({
+      r <- state$row()
+      if (is.null(r)) return(NULL)
+      v <- m4_value(values(), cfg)$total
+      htmltools::div(class = "dv-estimate",
+        htmltools::div(class = "dv-estimate-label", "Audited value"),
+        htmltools::div(class = "dv-estimate-value", sprintf("%s mm USD", fmt_num(v, 2)),
+          htmltools::span(sprintf("%s of the ex-ante value",
+                                  fmt_num(realization_pct(v, r$planned_value_mm_usd), 0, "%")))))
+    })
+    output$locked <- shiny::renderUI({
+      if (editable()) return(NULL)
+      htmltools::div(class = "dv-muted", "The audit form opens for superusers once execution is closed.")
+    })
+
+    output$chart <- echarts4r::renderEcharts4r(echart_from_option(lifecycle_option(lifecycle())))
+    output$table <- DT::renderDT({
+      lc <- lifecycle()
+      dt_compact(data.frame(Metric = lc$label, Unit = lc$unit, `4M estimate` = round(lc$estimate, 3),
+                            Review = round(lc$review, 3), Audited = round(lc$actual, 3),
+                            `Real. %` = round(lc$realization_pct, 0), check.names = FALSE),
                  dom = "t", selection = "none", ordering = FALSE)
     })
-
-    shiny::observeEvent(input$complete, {
-      r <- state$row()
-      if (is.null(r) || r$status != "Closed" || !state$user$is_planning) {
-        shiny::showNotification("Only closed initiatives can be audited (planning group)", type = "warning")
-        return()
-      }
-      if (!nrow(actual())) {
-        shiny::showNotification("Record at least one actual metric first", type = "warning"); return()
-      }
-      d <- pva()
-      db_add_audit(state$con, r$id, r$planned_value_mm_usd, sum(d$actual_mm_usd),
-                   if (nzchar(input$comment)) input$comment else NA, state$user$user)
-      db_set_status(state$con, r$id, "Audited", state$user$user, "Audit completed")
-      state$refresh()
-      shiny::showNotification(paste(r$id, "audited"), type = "message")
+    output$history <- DT::renderDT({
+      a <- audits()
+      dt_compact(data.frame(Date = substr(a$audited_at, 1, 16),
+                            `Ex-ante mm$` = round(a$expected_value_mm_usd, 2),
+                            `Audited mm$` = round(a$actual_value_mm_usd, 2),
+                            `Real. %` = round(a$realization_pct, 0), `Adoption %` = a$adoption_pct,
+                            Auditor = a$auditor, Conclusion = a$comment, check.names = FALSE),
+                 dom = "t", selection = "none")
     })
 
-    output$audits <- DT::renderDT({
-      state$version()
-      a <- db_get_audits(state$con)
-      a <- a[a$initiative_id %in% (state$selected() %||% ""), ]
-      dt_compact(data.frame(Date = substr(a$audited_at, 1, 16), `Planned mm$` = round(a$planned_value_mm_usd, 2),
-                            `Actual mm$` = round(a$actual_value_mm_usd, 2),
-                            `Real. %` = round(a$realization_pct, 0), Auditor = a$auditor,
-                            Conclusion = a$comment, check.names = FALSE),
-                 dom = "t", selection = "none")
+    shiny::observeEvent(input$save, {
+      r <- state$row()
+      if (is.null(r) || !editable()) return()
+      v <- values()
+      db_add_audit(state$con, r$id, v, input$adoption, m4_value(v, cfg)$total, r$planned_value_mm_usd,
+                   if (nzchar(input$comment)) input$comment else NA, state$user$user)
+      db_set_status(state$con, r$id, "Audited", state$user$user, "Value audit recorded")
+      state$refresh()
+      shiny::showNotification(paste(r$id, "audited"), type = "message")
     })
   })
 }

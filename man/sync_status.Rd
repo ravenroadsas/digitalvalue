@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_gates.R
 \name{sync_status}
 \alias{sync_status}
-\title{Synchronise stored statuses with the derived assessment status}
+\title{Synchronise stored statuses with the derived appraisal status}
 \usage{
 sync_status(con, cfg, user = "system")
 }
@@ -17,6 +17,6 @@ sync_status(con, cfg, user = "system")
 Ids whose status changed.
 }
 \description{
-Called after any assessment is saved (RICE, PRMT, review) so that the
-stored status always reflects what is pending.
+Called after any appraisal record is saved (registration, 4M, review) so
+that the stored status always reflects what is pending.
 }

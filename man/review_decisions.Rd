@@ -3,7 +3,7 @@
 \docType{data}
 \name{review_decisions}
 \alias{review_decisions}
-\title{Planning review decisions}
+\title{Expert review decisions}
 \format{
 An object of class \code{character} of length 3.
 }
@@ -11,6 +11,6 @@ An object of class \code{character} of length 3.
 review_decisions
 }
 \description{
-Planning review decisions
+Expert review decisions
 }
 \keyword{datasets}

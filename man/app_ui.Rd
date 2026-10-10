@@ -13,5 +13,6 @@ app_ui(request)
 UI definition.
 }
 \description{
-Application UI
+Two main tabs (Initiative, Portfolio) plus an Admin menu that is removed
+for non-superusers.
 }

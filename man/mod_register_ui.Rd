@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_register_ui.R
 \name{mod_register_ui}
 \alias{mod_register_ui}
-\title{Registration UI}
+\title{Registration & RICE UI (step 1, recorded at once)}
 \usage{
 mod_register_ui(id)
 }
@@ -10,5 +10,5 @@ mod_register_ui(id)
 \item{id}{Module id.}
 }
 \description{
-Registration UI
+Registration & RICE UI (step 1, recorded at once)
 }

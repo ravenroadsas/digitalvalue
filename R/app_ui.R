@@ -1,37 +1,39 @@
 #' Application UI
+#'
+#' Two main tabs (Initiative, Portfolio) plus an Admin menu that is removed
+#' for non-superusers.
 #' @param request Shiny request.
 #' @return UI definition.
 #' @export
 app_ui <- function(request) {
   theme <- bslib::bs_theme(
-    version = 5, primary = "#1667d9", secondary = "#2b3a4a",
-    "font-size-base" = "0.78rem", "border-radius" = "2px",
-    "card-spacer-y" = "0.4rem", "card-spacer-x" = "0.5rem"
+    version = 5, bg = "#ffffff", fg = mono$c900, primary = mono$c800, secondary = mono$c500,
+    success = mono$c700, info = mono$c600, warning = mono$c500, danger = mono$c900,
+    "font-size-base" = "0.8rem", "border-radius" = "2px",
+    "card-spacer-y" = "0.5rem", "card-spacer-x" = "0.6rem",
+    "navbar-padding-y" = "0.2rem"
   )
   bslib::page_navbar(
     id = "nav",
-    title = htmltools::span("Digital Value"),
-    window_title = "Digital Value \u00b7 Initiative Assessment",
+    title = htmltools::span(class = "dv-brand", "Digital Value"),
+    window_title = "Digital Value \u00b7 Initiative assessment",
     theme = theme,
-    bg = "#2b3a4a",
+    bg = mono$c900,
     inverse = TRUE,
     fillable = FALSE,
     header = htmltools::tagList(
+      shinyjs::useShinyjs(),
       htmltools::tags$link(rel = "stylesheet", href = "dv-www/styles.css"),
       htmltools::tags$script(src = "dv-www/process_logger.js")
     ),
-    sidebar = bslib::sidebar(width = 270, open = "desktop", mod_sidebar_ui("sidebar")),
-    bslib::nav_panel("Portfolio", value = "overview", mod_overview_ui("overview")),
-    bslib::nav_panel("1 Register", value = "register", mod_register_ui("register")),
-    bslib::nav_panel("2 Phase I \u00b7 RICE", value = "phase1", mod_phase1_ui("phase1")),
-    bslib::nav_panel("3 Phase II \u00b7 PRMT", value = "phase2", mod_phase2_ui("phase2")),
-    bslib::nav_panel("4 Phase III \u00b7 Planning", value = "phase3", mod_phase3_ui("phase3")),
-    bslib::nav_panel("5 Execution & audit", value = "audit", mod_audit_ui("audit")),
+    bslib::nav_panel("Initiative", value = "initiative", mod_initiative_ui("initiative")),
+    bslib::nav_panel("Portfolio", value = "portfolio", mod_portfolio_ui("portfolio")),
     bslib::nav_spacer(),
-    bslib::nav_menu("Admin", align = "right",
+    bslib::nav_menu("Admin", value = "admin", align = "right",
+      bslib::nav_panel("Value models", value = "models", mod_models_ui("models")),
       bslib::nav_panel("Process log", value = "process", mod_process_ui("process")),
-      bslib::nav_panel("Value model", value = "value_model", mod_value_model_ui("value_model")),
       bslib::nav_panel("Parameters", value = "parameters", mod_parameters_ui("parameters"))
-    )
+    ),
+    bslib::nav_item(shiny::uiOutput("whoami"))
   )
 }

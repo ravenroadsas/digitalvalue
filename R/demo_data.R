@@ -29,8 +29,7 @@ seed_demo_data <- function(con, cfg) {
          plan = list(list("t_users", list(n_users = 60, hours_week = 2, weeks_year = 46),
                           "60 engineers save 2 h/week.")),
          review = NULL, final = "Audited",
-         actual = list(list("t_users", list(n_users = 55, hours_week = 1.8, weeks_year = 46),
-                            "Measured after 6 months: 55 active users, 1.8 h/week."))),
+         actual_factor = 0.83, adoption = 92),
     list(name = "Waterflood optimisation advisor", bu = "Reservoir", owner = "Jorge Paz",
          desc = "Optimises injection allocation with capacitance-resistance models.",
          cost = 1.5, rice = list(80, "XL", "Low", "L", "Literature shows 0.5-1% RF uplift."),
@@ -73,70 +72,75 @@ seed_demo_data <- function(con, cfg) {
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(300, "L", "High", "M", NULL),
          plan = list(list("p_uptime", list(base_bopd = 8000, uptime_before = 93, uptime_after = 94), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 0.9),
+         review = NULL, final = "Audited", actual_factor = 0.9, adoption = 85),
     list(name = "Pump-off controller analytics", bu = "Production", owner = "Historical",
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(150, "M", "High", "M", NULL),
          plan = list(list("p_direct", list(bopd = 25), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 0.8),
+         review = NULL, final = "Audited", actual_factor = 0.8, adoption = 70),
     list(name = "Electronic permit to work", bu = "HSE", owner = "Historical",
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(1500, "S", "Certain", "M", NULL),
          plan = list(list("t_users", list(n_users = 300, hours_week = 0.5, weeks_year = 46), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 0.95),
+         review = NULL, final = "Audited", actual_factor = 0.95, adoption = 95),
     list(name = "Predictive maintenance - rotating equipment", bu = "Maintenance", owner = "Historical",
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(200, "XL", "Low", "L", NULL),
          plan = list(list("m_risk_avoided", list(cost_mm_usd = 20, prob_before = 10, prob_after = 5), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 0.6),
+         review = NULL, final = "Audited", actual_factor = 0.6, adoption = 55),
     list(name = "Reservoir surveillance dashboard", bu = "Reservoir", owner = "Historical",
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(120, "L", "High", "S", NULL),
          plan = list(list("p_decline", list(base_bopd = 6000, decline_before = 12, decline_after = 11), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 1.1),
+         review = NULL, final = "Audited", actual_factor = 1.1, adoption = 100),
     list(name = "Procurement spend analytics", bu = "Supply chain", owner = "Historical",
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(80, "M", "High", "M", NULL),
          plan = list(list("m_cost_saving", list(events_per_year = 30, saving_kusd = 15), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 0.85),
+         review = NULL, final = "Audited", actual_factor = 0.85, adoption = 80),
     list(name = "Flare monitoring with cameras", bu = "HSE", owner = "Historical",
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(60, "S", "Certain", "S", NULL),
          plan = list(list("m_direct", list(mm_usd = 0.12), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 1),
+         review = NULL, final = "Audited", actual_factor = 1, adoption = 90),
     list(name = "Integrated asset model", bu = "Reservoir", owner = "Historical",
          desc = "Completed initiative (history used to calibrate the value model).",
          cost = 0.5, rice = list(50, "XL", "Low", "XL", NULL),
          plan = list(list("r_recovery", list(ooip_mmbbl = 150, rf_before = 30, rf_after = 30.4, category = "2P"), "Historical valuation.")),
-         review = NULL, final = "Audited", actual_factor = 0.7),
+         review = NULL, final = "Audited", actual_factor = 0.7, adoption = 60),
     list(name = "Mobile field data capture", bu = "Operations", owner = "Raul Cano",
          desc = "Replaces paper field tickets with a mobile app.",
-         cost = NA, rice = NULL, plan = NULL, review = NULL, final = NULL)
+         cost = 0.3, rice = list(600, "M", "Low", "S", "Pilot requested by two field teams."),
+         plan = NULL, review = NULL, final = NULL)
   )
   ids <- character(0)
+  scaled_m4 <- function(id, factor) {
+    v <- m4_from_lines(db_get_m4_lines(con, id))
+    for (k in c("P", "R", "M", "T")) v[[k]] <- v[[k]] * factor
+    v
+  }
   for (k in seq_along(demo)) {
     d <- demo[[k]]
     day <- 3 * k
-    id <- db_add_initiative(con, d$name, d$desc, d$owner, d$bu, d$cost,
-                            user = "demo", time = at(day))
+    r <- d$rice
+    id <- db_register_initiative(
+      con, list(name = d$name, description = d$desc, owner = d$owner, business_unit = d$bu,
+                cost_mm_usd = d$cost),
+      rice_assess(r[[1]], r[[2]], r[[3]], r[[4]], cfg, r[[5]] %||% NA),
+      user = if (identical(d$owner, "Historical")) "demo" else d$owner, time = at(day))
     ids <- c(ids, id)
-    if (!is.null(d$rice)) {
-      r <- d$rice
-      db_save_rice(con, id, rice_assess(r[[1]], r[[2]], r[[3]], r[[4]], cfg, r[[5]] %||% NA),
-                   user = "demo", time = at(day + 4))
-    }
     for (l in d$plan) {
-      db_add_prmt_line(con, id, prmt_calculate(l[[1]], l[[2]], cfg), "plan",
-                       comment = l[[3]], user = "demo", time = at(day + 10))
+      db_add_m4_line(con, id, m4_calculate(l[[1]], l[[2]], cfg), comment = l[[3]],
+                     user = "superuser", time = at(day + 10))
     }
     sync_status_one(con, cfg, id, at(day + 10))
     if (!is.null(d$review)) {
-      pf <- compute_portfolio(db_portfolio(con), cfg)
-      row <- pf[pf$id == id, ]
-      db_add_review(con, id, d$review, row$plan_value_mm_usd * 0.9, row$cost_mm_usd,
+      v <- scaled_m4(id, 0.9)
+      cost <- db_get_initiatives(con, id)$cost_mm_usd
+      db_add_review(con, id, d$review, v, m4_value(v, cfg)$total, cost,
                     comment = if (d$review == "Approve") "Value haircut 10% for execution risk."
                               else "Technology not mature; revisit next year.",
-                    user = "planning", time = at(day + 18))
+                    user = "superuser", time = at(day + 18))
       sync_status_one(con, cfg, id, at(day + 18))
     }
     path <- switch(d$final %||% "",
@@ -146,26 +150,18 @@ seed_demo_data <- function(con, cfg) {
       "Audited" = c("Prioritized", "In execution", "Closed"),
       character(0))
     for (j in seq_along(path)) {
-      db_set_status(con, id, path[j], "demo", time = at(day + 20 + 15 * j))
+      db_set_status(con, id, path[j], "superuser", time = at(day + 20 + 15 * j))
     }
     if (identical(d$final, "Audited")) {
-      if (is.null(d[["actual"]]) && !is.null(d[["actual_factor"]])) {
-        pf <- compute_portfolio(db_portfolio(con), cfg)
-        planned <- pf$plan_value_mm_usd[pf$id == id]
-        d$actual <- list(list("m_direct", list(mm_usd = planned * d[["actual_factor"]]),
-                              "Measured value at audit."))
-      }
-      for (l in d[["actual"]]) {
-        db_add_prmt_line(con, id, prmt_calculate(l[[1]], l[[2]], cfg), "actual",
-                         comment = l[[3]], user = "planning", time = at(day + 80))
-      }
+      v <- scaled_m4(id, d[["actual_factor"]])
       pf <- compute_portfolio(db_portfolio(con), cfg)
-      row <- pf[pf$id == id, ]
-      db_add_audit(con, id, row$planned_value_mm_usd, row$actual_value_mm_usd,
-                   "Adoption slightly below plan.", user = "planning", time = at(day + 81))
-      db_set_status(con, id, "Audited", "planning", time = at(day + 81))
+      expected <- pf$planned_value_mm_usd[pf$id == id]
+      db_add_audit(con, id, v, d[["adoption"]], m4_value(v, cfg)$total, expected,
+                   "Measured 6 months after go-live.", user = "superuser", time = at(day + 81))
+      db_set_status(con, id, "Audited", "superuser", time = at(day + 81))
     }
   }
+  ensure_value_models(con, cfg, "system")
   invisible(ids)
 }
 
@@ -173,6 +169,6 @@ sync_status_one <- function(con, cfg, id, time) {
   pf <- compute_portfolio(db_portfolio(con), cfg)
   row <- pf[pf$id == id, ]
   if (row$derived_status != row$status) {
-    db_set_status(con, id, row$derived_status, "system", "Automatic (assessment gates)", time)
+    db_set_status(con, id, row$derived_status, "system", "Automatic (appraisal gates)", time)
   }
 }

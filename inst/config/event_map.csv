@@ -1,27 +1,21 @@
 pattern,activity,process_phase
-^nav:overview$,Review portfolio,Portfolio monitoring
-^nav:register$,Open registration,1 Registration
-^nav:phase1$,Open RICE scoring,2 Phase I - RICE
-^nav:phase2$,Open PRMT valuation,3 Phase II - PRMT
-^nav:phase3$,Open planning review,4 Phase III - Planning
-^nav:audit$,Open execution & audit,5 Execution & audit
-^nav:(process|parameters|value_model)$,Administer,Administration
-^sidebar-initiative$,Select initiative,Navigation
-^sidebar-act_,Change workflow status,Workflow decision
-^sidebar-comment$,Change workflow status,Workflow decision
-^register-(name|description|owner|business_unit|cost_mm_usd|start_date|end_date)$,Edit initiative data,1 Registration
-^register-(save_new|update)$,Save initiative,1 Registration
-^register-table_rows_selected$,Select initiative,Navigation
-^phase1-(users|impact|confidence|effort|rationale)$,Edit RICE inputs,2 Phase I - RICE
-^phase1-save$,Save RICE score,2 Phase I - RICE
-^phase1-y_axis$,Explore prioritisation chart,2 Phase I - RICE
-^phase2-editor-(metric|method|p_.*|comment)$,Edit PRMT calculation,3 Phase II - PRMT
-^phase2-editor-add$,Add PRMT calculation,3 Phase II - PRMT
-^phase2-editor-delete$,Delete PRMT calculation,3 Phase II - PRMT
-^phase3-(decision|validated_value|validated_cost|comment|save)$,Planning review,4 Phase III - Planning
-^audit-editor-,Record actual metrics,5 Execution & audit
-^audit-(comment|complete)$,Complete audit,5 Execution & audit
-^(overview|phase1|phase3|audit)-.*_rows_selected$,Select initiative,Navigation
-^overview-,Review portfolio,Portfolio monitoring
-^process-,Administer,Administration
-^value_model-,Administer,Administration
+^nav:portfolio$,Review portfolio,Portfolio monitoring
+^nav:initiative$,Open initiative,Navigation
+^nav:(models|process|parameters)$,Administer,Administration
+^initiative-select$,Select initiative,Navigation
+^initiative-stage$,Switch lifecycle view,Navigation
+^initiative-new$,Start registration,1 Registration & RICE
+^initiative-(act_.*|decision_comment)$,Record workflow decision,4 Decision
+^initiative-register-(save|update)$,Save registration & RICE,1 Registration & RICE
+^initiative-register-,Edit registration & RICE,1 Registration & RICE
+^initiative-valuation-add$,Add 4M calculation,2 4M valuation
+^initiative-valuation-delete$,Delete 4M calculation,2 4M valuation
+^initiative-valuation-,Edit 4M calculation,2 4M valuation
+^initiative-review-save$,Record expert review,3 Expert review
+^initiative-review-,Edit expert review,3 Expert review
+^initiative-audit-save$,Record value audit,5 Value audit
+^initiative-audit-,Edit value audit,5 Value audit
+^portfolio-.*_rows_selected$,Select initiative,Navigation
+^portfolio-,Review portfolio,Portfolio monitoring
+^models-.*_(publish|activate)$,Publish value model,Administration
+^(models|process|parameters)-,Administer,Administration

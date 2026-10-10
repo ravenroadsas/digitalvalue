@@ -2,13 +2,15 @@
 % Please edit documentation in R/data_db.R
 \name{db_add_audit}
 \alias{db_add_audit}
-\title{Record a post-closure audit}
+\title{Record a post-execution value audit: actual 4M figures plus adoption}
 \usage{
 db_add_audit(
   con,
   id,
-  planned,
-  actual,
+  values = list(),
+  adoption_pct = NA,
+  actual_value_mm_usd = NA,
+  expected_value_mm_usd = NA,
   comment = NA,
   user = "unknown",
   time = Sys.time()
@@ -19,7 +21,13 @@ db_add_audit(
 
 \item{id}{Initiative id.}
 
-\item{planned, actual}{Planned and actual value (mm USD).}
+\item{values}{Named list \code{P}, \code{R}, \code{category}, \code{M}, \code{T} (actual, native units).}
+
+\item{adoption_pct}{Share of the intended users actually using the solution.}
+
+\item{actual_value_mm_usd}{Monetary equivalent of \code{values}.}
+
+\item{expected_value_mm_usd}{Ex-ante value the audit is compared with.}
 
 \item{comment}{Comment.}
 
@@ -31,5 +39,5 @@ db_add_audit(
 The audit id.
 }
 \description{
-Record a post-closure audit
+Record a post-execution value audit: actual 4M figures plus adoption
 }

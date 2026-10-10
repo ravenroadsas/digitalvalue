@@ -1,9 +1,12 @@
 test_that("status groups and colours highlight prioritized and executing", {
-  expect_equal(plot_group(c("Prioritized", "In execution", "Phase II", "Ready", "Audited", "Rejected")),
-               c("Prioritized", "In execution", "In assessment", "Ready for decision",
+  expect_equal(plot_group(c("Prioritized", "In execution", "4M valuation", "Ready", "Audited", "Rejected")),
+               c("Prioritized", "In execution", "In appraisal", "Ready for decision",
                  "Closed / audited", "Rejected"))
   expect_true(all(status_all %in% names(status_colors())))
-  expect_false(group_colors()[["Prioritized"]] == group_colors()[["In execution"]])
+  gs <- group_style()
+  expect_false(gs$color[gs$group == "Prioritized"] == gs$color[gs$group == "In execution"])
+  expect_false(gs$symbol[gs$group == "Prioritized"] == gs$symbol[gs$group == "In execution"])
+  expect_true(all(unlist(mono) == toupper(unlist(mono))))
 })
 
 test_that("prioritisation data and option", {
@@ -17,7 +20,7 @@ test_that("prioritisation data and option", {
   dv <- prioritization_data(pf, cfg, "value")
   expect_equal(dv$y, pf$planned_value_mm_usd[!is.na(pf$score)])
   o <- prioritization_option(pf, cfg, "score", highlight = d$id[1])
-  expect_equal(vapply(o$series, `[[`, "", "name"), names(group_colors()))
+  expect_equal(vapply(o$series, `[[`, "", "name"), group_style()$group)
   n_points <- sum(vapply(o$series, function(s) length(s$data), 0L))
   expect_equal(n_points, nrow(d))
   expect_equal(sum(vapply(o$series, function(s) !is.null(s$markLine), TRUE)), 1)
@@ -32,9 +35,11 @@ test_that("other chart options are well formed", {
   pf <- compute_portfolio(db_portfolio(con), cfg)
   so <- status_option(pf)
   expect_equal(so$xAxis$data, status_all)
-  pva <- plan_vs_actual(data.frame(metric = "P", result_value = 1, value_mm_usd = 1), NULL)
-  expect_equal(plan_actual_option(pva)$series[[1]]$data[1], 1)
-  bo <- prmt_breakdown_option(prmt_summary(data.frame(metric = "T", result_value = 1, value_mm_usd = 0.2)))
+  lc <- m4_lifecycle(data.frame(metric = "P", result_value = 1, value_mm_usd = 1), NULL, NULL, cfg)
+  lo <- lifecycle_option(lc)
+  expect_equal(lo$series[[1]]$data[1], 1)
+  expect_equal(lo$series[[3]]$data, rep(0, 4))
+  bo <- m4_breakdown_option(m4_summary(data.frame(metric = "T", result_value = 1, value_mm_usd = 0.2)))
   expect_length(bo$series[[1]]$data, 1)
   pe <- data.frame(process_phase = "A", instances = 1L, minutes = 2, users = 1L)
   expect_equal(phase_effort_option(pe)$yAxis$data, "A")

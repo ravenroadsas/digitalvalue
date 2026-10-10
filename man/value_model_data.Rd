@@ -2,21 +2,21 @@
 % Please edit documentation in R/fct_value_model.R
 \name{value_model_data}
 \alias{value_model_data}
-\title{Training data for the value model}
+\title{Training data for a value model}
 \usage{
-value_model_data(pf, cfg)
+value_model_data(pf, cfg, kind = "rice_to_review")
 }
 \arguments{
 \item{pf}{Output of \code{\link[=compute_portfolio]{compute_portfolio()}}.}
 
 \item{cfg}{Configuration list.}
+
+\item{kind}{Model kind.}
 }
 \value{
-Data frame \code{id}, \code{name}, \code{status}, \code{users}, \code{reach_value}, \code{impact},
-\code{confidence}, \code{effort}, \code{rice_value}, \code{value_mm_usd}, \code{log_impact},
-\code{log_confidence}, \code{log_effort}, \code{log_value}.
+Data frame with features, \code{x} (chart axis), \code{y} (target, mm USD) and
+\code{log_y}.
 }
 \description{
-Initiatives with a RICE score and a positive monetary value (planning
-validated value when approved, otherwise the Phase II PRMT total).
+Training data for a value model
 }

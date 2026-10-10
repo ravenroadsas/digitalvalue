@@ -8,28 +8,39 @@ app_server <- function(input, output, session) {
 
   version <- shiny::reactiveVal(0)
   selected <- shiny::reactiveVal(NULL)
+  stage <- shiny::reactiveVal("appraisal")
 
   portfolio <- shiny::reactive({
     version()
     compute_portfolio(db_portfolio(con), cfg)
   })
-  # value model refitted whenever the data changes (anticipates value in Phase I)
-  value_model <- shiny::reactive(fit_value_model(value_model_data(portfolio(), cfg), cfg))
   history <- shiny::reactive({
     version()
     db_get_status_history(con)
   })
+  # published (active) value models; they change only when a superuser publishes
+  models <- shiny::reactive({
+    version()
+    stats::setNames(lapply(names(value_model_kinds), function(k) db_active_value_model(con, k)),
+                    names(value_model_kinds))
+  })
 
   state <- list(
     con = con, cfg = cfg, user = usr,
-    portfolio = portfolio, history = history, selected = selected, version = version,
-    value_model = value_model,
+    can = function(action) can(usr, action),
+    portfolio = portfolio, history = history, models = models,
+    selected = selected, stage = stage, version = version,
     # call after every write: re-derives statuses and refreshes all views
     refresh = function() {
       sync_status(con, cfg, usr$user)
       version(shiny::isolate(version()) + 1)
     },
-    goto = function(tab) bslib::nav_select("nav", tab, session = session),
+    # open an initiative in the Initiative tab, optionally on a lifecycle view
+    open = function(id, view = NULL) {
+      selected(id)
+      if (!is.null(view)) stage(view)
+      bslib::nav_select("nav", "initiative", session = session)
+    },
     row = shiny::reactive({
       id <- selected()
       pf <- portfolio()
@@ -37,16 +48,20 @@ app_server <- function(input, output, session) {
     })
   )
 
-  mod_sidebar_server("sidebar", state)
-  mod_overview_server("overview", state)
-  mod_register_server("register", state)
-  mod_phase1_server("phase1", state)
-  mod_phase2_server("phase2", state)
-  mod_phase3_server("phase3", state)
-  mod_audit_server("audit", state)
-  mod_process_server("process", state)
-  mod_value_model_server("value_model", state)
-  mod_parameters_server("parameters", state)
+  output$whoami <- shiny::renderUI({
+    htmltools::span(class = "dv-whoami", usr$user,
+                    htmltools::span(class = paste("dv-role", usr$role), usr$role))
+  })
+
+  mod_initiative_server("initiative", state)
+  mod_portfolio_server("portfolio", state)
+  if (can(usr, "admin")) {
+    mod_models_server("models", state)
+    mod_process_server("process", state)
+    mod_parameters_server("parameters", state)
+  } else {
+    bslib::nav_remove("nav", "admin", session = session)
+  }
 
   # Process mining: raw activity batches buffered client-side
   shiny::observeEvent(input$dv_raw_events, {

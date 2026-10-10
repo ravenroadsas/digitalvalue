@@ -2,18 +2,27 @@
 % Please edit documentation in R/fct_value_model.R
 \name{value_model_features}
 \alias{value_model_features}
-\title{Model features from RICE inputs}
+\title{Model features from RICE inputs (and ex-ante value)}
 \usage{
-value_model_features(users, impact, confidence, effort, cfg)
+value_model_features(
+  users,
+  impact,
+  confidence,
+  effort,
+  cfg,
+  expected = NA_real_
+)
 }
 \arguments{
 \item{users, impact, confidence, effort}{RICE inputs.}
 
 \item{cfg}{Configuration list.}
+
+\item{expected}{Optional ex-ante value (mm USD).}
 }
 \value{
 Data frame of features.
 }
 \description{
-Model features from RICE inputs
+Model features from RICE inputs (and ex-ante value)
 }

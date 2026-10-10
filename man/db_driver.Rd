@@ -10,6 +10,6 @@ db_driver()
 A driver name.
 }
 \description{
-\code{DV_DB_DRIVER} selects the driver (\code{duckdb}, \code{sqlite}). When unset DuckDB is
-used if installed, SQLite otherwise.
+Data are stored in DuckDB. \code{DV_DB_DRIVER} can select another driver
+(\code{sqlite} is supported for lightweight testing only).
 }

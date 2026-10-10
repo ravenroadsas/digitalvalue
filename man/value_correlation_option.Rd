@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_value_model.R
 \name{value_correlation_option}
 \alias{value_correlation_option}
-\title{ECharts option: RICE value vs monetary value (log scales)}
+\title{ECharts option: observed relationship with the fitted line and range}
 \usage{
 value_correlation_option(model)
 }
@@ -13,6 +13,5 @@ value_correlation_option(model)
 An ECharts option list.
 }
 \description{
-Observed initiatives plus the simple regression line and its prediction
-band, i.e. the bivariate correlation behind the model.
+ECharts option: observed relationship with the fitted line and range
 }

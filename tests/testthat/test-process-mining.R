@@ -4,23 +4,24 @@ raw_events <- function() data.frame(
   session_id = "s1", user_name = "u1",
   initiative_id = c("DV-0001", "DV-0001", "DV-0001", "DV-0001", "DV-0001", NA),
   source = "input",
-  raw_name = c("nav", "phase1-users", "phase1-impact", "phase1-save", "phase1-users", "unknown-x"),
-  raw_value = c("phase1", "10", "M", "1", "20", "1"),
+  raw_name = c("nav", "initiative-register-users", "initiative-register-impact", "initiative-register-save",
+               "initiative-register-users", "unknown-x"),
+  raw_value = c("initiative", "10", "M", "1", "20", "1"),
   stringsAsFactors = FALSE)
 
 test_that("raw events map to activities and phases", {
   m <- map_raw_events(raw_events(), test_cfg()$event_map)
-  expect_equal(m$key[1], "nav:phase1")
-  expect_equal(m$activity[1:4], c("Open RICE scoring", "Edit RICE inputs", "Edit RICE inputs",
-                                  "Save RICE score"))
-  expect_equal(m$process_phase[2], "2 Phase I - RICE")
+  expect_equal(m$key[1], "nav:initiative")
+  expect_equal(m$activity[1:4], c("Open initiative", "Edit registration & RICE",
+                                  "Edit registration & RICE", "Save registration & RICE"))
+  expect_equal(m$process_phase[2], "1 Registration & RICE")
   expect_true(is.na(m$activity[6]))
 })
 
 test_that("consecutive events collapse into activity instances with idle gaps", {
   a <- build_activity_log(raw_events(), test_cfg()$event_map, gap_minutes = 10)
-  expect_equal(a$activity, c("Open RICE scoring", "Edit RICE inputs", "Save RICE score",
-                             "Edit RICE inputs"))
+  expect_equal(a$activity, c("Open initiative", "Edit registration & RICE",
+                             "Save registration & RICE", "Edit registration & RICE"))
   expect_equal(a$n_events, c(1L, 2L, 1L, 1L))
   expect_equal(a$start[2], "2026-01-01 10:00:05")
   expect_equal(a$complete[2], "2026-01-01 10:00:20")
@@ -28,11 +29,11 @@ test_that("consecutive events collapse into activity instances with idle gaps", 
 })
 
 test_that("business log and exported event log", {
-  h <- data.frame(initiative_id = "DV-0001", from_status = c(NA, "Phase I"),
-                  to_status = c("Phase I", "Phase II"), changed_by = "u1",
+  h <- data.frame(initiative_id = "DV-0001", from_status = c(NA, "Registered"),
+                  to_status = c("Registered", "4M valuation"), changed_by = "u1",
                   changed_at = c("2026-01-01 09:00:00", "2026-01-01 10:01:00"), comment = NA)
   b <- build_business_log(h)
-  expect_equal(b$activity, c("Register initiative", "Enter Phase II"))
+  expect_equal(b$activity, c("Register initiative", "Enter 4M valuation"))
   a <- build_activity_log(raw_events(), test_cfg()$event_map)
   e <- export_event_log(a, b)
   expect_equal(nrow(e), 2 * nrow(a) + nrow(b))
@@ -44,7 +45,7 @@ test_that("business log and exported event log", {
 test_that("phase effort sums durations", {
   a <- build_activity_log(raw_events(), test_cfg()$event_map)
   pe <- phase_effort(a)
-  expect_equal(pe$minutes[pe$process_phase == "2 Phase I - RICE"], 15 / 60)
+  expect_equal(pe$minutes[pe$process_phase == "1 Registration & RICE"], 15 / 60)
   expect_equal(nrow(phase_effort(a[0, ])), 0)
 })
 

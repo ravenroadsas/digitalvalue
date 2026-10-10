@@ -11,7 +11,7 @@ callout(..., title = NULL, type = "info")
 
 \item{title}{Title.}
 
-\item{type}{One of \code{"info"}, \code{"success"}, \code{"warning"}, \code{"danger"}.}
+\item{type}{Emphasis: \code{"info"}, \code{"low"}, \code{"medium"} or \code{"high"} (darker = more urgent).}
 }
 \value{
 HTML tag.

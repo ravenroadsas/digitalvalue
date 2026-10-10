@@ -2,20 +2,20 @@
 % Please edit documentation in R/fct_value_model.R
 \name{predict_value}
 \alias{predict_value}
-\title{Anticipate the monetary value from RICE inputs}
+\title{Anticipated ex-ante value from RICE inputs}
 \usage{
-predict_value(model, users, impact, confidence, effort, cfg)
+predict_value(record, users, impact, confidence, effort, cfg)
 }
 \arguments{
-\item{model}{Output of \code{\link[=fit_value_model]{fit_value_model()}}.}
+\item{record}{Active \code{rice_to_review} record.}
 
-\item{users, impact, confidence, effort}{RICE inputs (vectors allowed).}
+\item{users, impact, confidence, effort}{RICE inputs.}
 
 \item{cfg}{Configuration list.}
 }
 \value{
-Data frame \code{median}, \code{low}, \code{high} (mm USD); \code{NA} when no model.
+Data frame \code{predicted}, \code{low}, \code{high} (mm USD).
 }
 \description{
-Anticipate the monetary value from RICE inputs
+Anticipated ex-ante value from RICE inputs
 }

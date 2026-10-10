@@ -15,7 +15,7 @@ fmt_num <- function(x, digits = 1, suffix = "") {
 #' @param label Label.
 #' @param value Main value (formatted).
 #' @param sub Sub-text.
-#' @param tone One of `"neutral"`, `"good"`, `"warn"`, `"bad"`, `"info"`.
+#' @param tone `"neutral"` or `"strong"` (dark accent).
 #' @return HTML tag.
 #' @export
 kpi_tile <- function(label, value, sub = NULL, tone = "neutral") {
@@ -28,7 +28,7 @@ kpi_tile <- function(label, value, sub = NULL, tone = "neutral") {
 #' Callout box
 #' @param ... Content.
 #' @param title Title.
-#' @param type One of `"info"`, `"success"`, `"warning"`, `"danger"`.
+#' @param type Emphasis: `"info"`, `"low"`, `"medium"` or `"high"` (darker = more urgent).
 #' @return HTML tag.
 #' @export
 callout <- function(..., title = NULL, type = "info") {
@@ -43,8 +43,11 @@ callout <- function(..., title = NULL, type = "info") {
 #' @export
 status_badge <- function(status) {
   col <- status_colors()[status]
-  if (is.na(col)) col <- "#777"
-  htmltools::span(class = "dv-badge", style = paste0("background:", col, ";"), status)
+  if (is.na(col)) col <- mono$c400
+  dark <- col %in% c(mono$c500, mono$c600, mono$c700, mono$c800, mono$c900)
+  htmltools::span(class = "dv-badge",
+                  style = sprintf("background:%s;color:%s;", col, if (dark) "#ffffff" else mono$c900),
+                  status)
 }
 
 #' Section box (compact card)
@@ -66,14 +69,12 @@ box <- function(title, ..., right = NULL, class = NULL) {
 #' On Posit Connect `session$user` and `session$groups` are populated from the
 #' authenticated identity; locally the OS user is used.
 #' @param session Shiny session.
-#' @return List `user`, `groups`, `is_planning`.
+#' @return List `user`, `groups`, `role` (see [user_role()]).
 #' @export
 app_user <- function(session) {
   user <- session$user %||% Sys.getenv("USER", Sys.getenv("USERNAME", "local-user"))
   groups <- session$groups %||% character(0)
-  planning_group <- Sys.getenv("DV_PLANNING_GROUP")
-  is_planning <- !nzchar(planning_group) || planning_group %in% groups
-  list(user = user, groups = groups, is_planning = is_planning)
+  list(user = user, groups = groups, role = user_role(user, groups))
 }
 
 dt_compact <- function(df, ..., page_length = 10, selection = "single") {

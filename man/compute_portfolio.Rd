@@ -13,9 +13,10 @@ compute_portfolio(portfolio, cfg)
 }
 \value{
 Data frame with extra columns \code{planned_value_mm_usd},
-\code{planned_cost_mm_usd}, \code{req_phase2}, \code{req_phase3}, \code{has_rice},
-\code{has_valuation}, \code{derived_status}.
+\code{planned_cost_mm_usd}, \code{has_rice}, \code{has_valuation}, \code{req_valuation},
+\code{req_review}, \code{derived_status}, \code{rice_rank}.
 }
 \description{
-Enrich the portfolio with gates, readiness and derived status
+The ex-ante value (\code{planned_value_mm_usd}) is the expert-review value when
+the review approved the initiative, otherwise the 4M estimate.
 }

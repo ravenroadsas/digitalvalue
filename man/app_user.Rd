@@ -10,7 +10,7 @@ app_user(session)
 \item{session}{Shiny session.}
 }
 \value{
-List \code{user}, \code{groups}, \code{is_planning}.
+List \code{user}, \code{groups}, \code{role} (see \code{\link[=user_role]{user_role()}}).
 }
 \description{
 On Posit Connect \code{session$user} and \code{session$groups} are populated from the

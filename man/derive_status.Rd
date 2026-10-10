@@ -2,20 +2,27 @@
 % Please edit documentation in R/fct_gates.R
 \name{derive_status}
 \alias{derive_status}
-\title{Derive the assessment status from the available data}
+\title{Derive the appraisal status from the available data}
 \usage{
-derive_status(current, has_rice, req2, has_valuation, req3, review_decision)
+derive_status(
+  current,
+  has_rice,
+  req_val,
+  has_valuation,
+  req_rev,
+  review_decision
+)
 }
 \arguments{
 \item{current}{Current status.}
 
-\item{has_rice}{Logical, RICE scored.}
+\item{has_rice}{Logical, RICE recorded.}
 
-\item{req2}{Logical, Phase II required.}
+\item{req_val}{Logical, 4M valuation required.}
 
-\item{has_valuation}{Logical, at least one plan PRMT line.}
+\item{has_valuation}{Logical, at least one 4M line.}
 
-\item{req3}{Logical, Phase III required.}
+\item{req_rev}{Logical, expert review required.}
 
 \item{review_decision}{Latest review decision (or \code{NA}).}
 }
@@ -24,5 +31,5 @@ Character vector of statuses.
 }
 \description{
 Decision statuses (Prioritized, In execution, ...) are kept; otherwise the
-status is the first pending assessment phase, or "Ready" when complete.
+status is the first pending appraisal step, or "Ready" when complete.
 }

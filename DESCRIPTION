@@ -3,10 +3,11 @@ Title: Digital Initiatives Value Assessment
 Version: 0.1.0
 Authors@R: person("Frenk", "Giorgetti", email = "frenk.giorgetti@gmail.com", role = c("aut", "cre"))
 Description: Shiny application, structured as an R package, to record digital
-    initiatives and assess their value through a staged process: Phase I
-    qualitative prioritisation (RICE), Phase II monetary valuation (PRMT:
-    production, reserves, monetary, time), Phase III planning review, and a
-    post-closure audit of materialised value. User activity is logged and
+    initiatives and follow their value through the lifecycle: registration
+    with RICE, 4M valuation (production, reserves, monetary, time), expert
+    review, decision, execution and post-execution value audit with adoption.
+    Calibrated regressions anticipate value from RICE and realised value from
+    the ex-ante evaluation. User activity is logged and
     grouped into process phases to support process mining.
 License: file LICENSE
 Encoding: UTF-8
@@ -16,16 +17,17 @@ Depends: R (>= 4.1)
 Imports:
     bslib (>= 0.6.0),
     DBI,
+    duckdb,
     DT,
     echarts4r,
     htmltools,
     htmlwidgets,
     jsonlite,
     shiny (>= 1.7.0),
+    shinyjs,
     stats,
     utils
 Suggests:
-    duckdb,
     pins,
     pkgload,
     RSQLite,

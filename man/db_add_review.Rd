@@ -2,14 +2,15 @@
 % Please edit documentation in R/data_db.R
 \name{db_add_review}
 \alias{db_add_review}
-\title{Record a planning (Phase III) review}
+\title{Record an expert review (manual evaluation) with its own 4M figures}
 \usage{
 db_add_review(
   con,
   id,
   decision,
-  validated_value_mm_usd = NA,
-  validated_cost_mm_usd = NA,
+  values = list(),
+  value_mm_usd = NA,
+  cost_mm_usd = NA,
   comment = NA,
   user = "unknown",
   time = Sys.time()
@@ -22,7 +23,11 @@ db_add_review(
 
 \item{decision}{\code{"Approve"}, \code{"Rework"} or \code{"Reject"}.}
 
-\item{validated_value_mm_usd, validated_cost_mm_usd}{Planning figures.}
+\item{values}{Named list \code{P}, \code{R}, \code{category}, \code{M}, \code{T} (native units).}
+
+\item{value_mm_usd}{Monetary equivalent of \code{values} (see \code{\link[=m4_value]{m4_value()}}).}
+
+\item{cost_mm_usd}{Validated cost.}
 
 \item{comment}{Comment.}
 
@@ -34,5 +39,5 @@ db_add_review(
 The review id.
 }
 \description{
-Record a planning (Phase III) review
+Record an expert review (manual evaluation) with its own 4M figures
 }

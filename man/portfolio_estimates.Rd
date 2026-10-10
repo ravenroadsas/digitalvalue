@@ -4,17 +4,17 @@
 \alias{portfolio_estimates}
 \title{Value-model estimates for every initiative of the portfolio}
 \usage{
-portfolio_estimates(pf, model, cfg)
+portfolio_estimates(pf, record, cfg)
 }
 \arguments{
 \item{pf}{Output of \code{\link[=compute_portfolio]{compute_portfolio()}}.}
 
-\item{model}{Output of \code{\link[=fit_value_model]{fit_value_model()}}.}
+\item{record}{Active \code{rice_to_review} record.}
 
 \item{cfg}{Configuration list.}
 }
 \value{
-Data frame aligned with \code{pf}: \code{median}, \code{low}, \code{high} (mm USD).
+Data frame aligned with \code{pf}: \code{predicted}, \code{low}, \code{high} (mm USD).
 }
 \description{
 Value-model estimates for every initiative of the portfolio

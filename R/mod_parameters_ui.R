@@ -8,6 +8,8 @@ mod_parameters_ui <- function(id) {
     bslib::layout_columns(col_widths = c(6, 6),
       box("Valuation parameters and gates", DT::DTOutput(ns("parameters"))),
       box("RICE weights", DT::DTOutput(ns("scales")))),
-    box("Process-mining event map", DT::DTOutput(ns("event_map")))
+    bslib::layout_columns(col_widths = c(5, 7),
+      box("User levels", DT::DTOutput(ns("permissions")), shiny::uiOutput(ns("roles"))),
+      box("Process-mining event map", DT::DTOutput(ns("event_map"))))
   )
 }

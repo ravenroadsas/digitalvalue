@@ -16,6 +16,8 @@ run_app <- function(...) {
       con <- db_connect()
       db_init(con)
       if (!identical(tolower(Sys.getenv("DV_SEED_DEMO", "true")), "false")) seed_demo_data(con, cfg)
+      # first calibration when data allow and nothing is published yet
+      ensure_value_models(con, cfg, "system")
       .dv$con <- con
       .dv$cfg <- cfg
       shiny::onStop(function() {
