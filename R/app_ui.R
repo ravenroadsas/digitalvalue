@@ -1,7 +1,7 @@
 #' Application UI
 #'
-#' Two main tabs (Initiative, Portfolio) plus an Admin menu that is removed
-#' for non-superusers.
+#' Two main tabs (Initiative, Portfolio), the Methodology page (English /
+#' Spanish) and an Admin menu that is removed for non-superusers.
 #' @param request Shiny request.
 #' @return UI definition.
 #' @export
@@ -28,6 +28,7 @@ app_ui <- function(request) {
     ),
     bslib::nav_panel("Initiative", value = "initiative", mod_initiative_ui("initiative")),
     bslib::nav_panel("Portfolio", value = "portfolio", mod_portfolio_ui("portfolio")),
+    bslib::nav_panel("Methodology", value = "methodology", mod_methodology_ui("methodology")),
     bslib::nav_spacer(),
     bslib::nav_menu("Admin", value = "admin", align = "right",
       bslib::nav_panel("Value models", value = "models", mod_models_ui("models")),

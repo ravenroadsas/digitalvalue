@@ -7,6 +7,8 @@ The app has two main tabs:
 * **Initiative**: select an initiative, or register a new one, and work through its lifecycle.
 * **Portfolio**: KPIs, the prioritisation chart, alerts and the register of all initiatives.
 
+A **Methodology** tab, open to everyone, explains the method in **English and Spanish**: a summary with the principles, then one section per step, the gates, the value models, roles, KPIs and a glossary. The text is in `inst/app/methodology/methodology_en.md` and `methodology_es.md`, so it can be edited without touching code. Thresholds, weights and conversion factors are written as `{{placeholders}}` and filled from the active configuration, so the document always matches what the app does.
+
 Superusers also get an **Admin** menu: Value models, Process log and Parameters.
 
 ![Initiative](docs/screenshots/initiative_appraisal.png)
@@ -105,15 +107,18 @@ R/
     mod_register_*, mod_valuation_*,       components of the Initiative tab (one ui/server pair each)
     mod_review_*, mod_audit_*
   mod_portfolio_ui.R / _server.R           Portfolio tab
+  mod_methodology_ui.R / _server.R         Methodology tab (English / Spanish)
   mod_models_*, mod_process_*,             Admin tabs (superusers only)
   mod_parameters_*
   fct_rice.R, fct_4m.R, fct_gates.R,       business logic: pure functions, unit tested
   fct_roles.R, fct_kpi.R, fct_value_model.R,
-  fct_plots.R, fct_process_mining.R
+  fct_plots.R, fct_process_mining.R,
+  fct_methodology.R                        methodology Markdown -> HTML with live parameters
   data_db.R                                ALL database access (single file)
   config.R                                 configuration from pins (Connect) or CSV
   demo_data.R, utils_ui.R
 inst/config/*.csv                          parameters, RICE weights, process-mining event map
+inst/app/methodology/*.md                  methodology text (English, Spanish)
 inst/app/www/styles.css                    monochrome theme
 inst/app/www/process_logger.js             client-side activity buffering
 tests/testthat/                            unit tests and module server tests (testServer)

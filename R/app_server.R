@@ -55,6 +55,7 @@ app_server <- function(input, output, session) {
 
   mod_initiative_server("initiative", state)
   mod_portfolio_server("portfolio", state)
+  mod_methodology_server("methodology", state)
   if (can(usr, "admin")) {
     mod_models_server("models", state)
     mod_process_server("process", state)

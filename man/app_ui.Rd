@@ -13,6 +13,6 @@ app_ui(request)
 UI definition.
 }
 \description{
-Two main tabs (Initiative, Portfolio) plus an Admin menu that is removed
-for non-superusers.
+Two main tabs (Initiative, Portfolio), the Methodology page (English /
+Spanish) and an Admin menu that is removed for non-superusers.
 }

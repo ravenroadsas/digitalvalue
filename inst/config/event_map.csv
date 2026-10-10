@@ -1,5 +1,7 @@
 pattern,activity,process_phase
 ^nav:portfolio$,Review portfolio,Portfolio monitoring
+^nav:methodology$,Read methodology,Methodology
+^methodology-,Read methodology,Methodology
 ^nav:initiative$,Open initiative,Navigation
 ^nav:(models|process|parameters)$,Administer,Administration
 ^initiative-select$,Select initiative,Navigation
