@@ -205,7 +205,8 @@ predict_value <- function(record, users, impact, confidence, effort, cfg) {
 #' Anticipated realised value from the ex-ante value
 #' @param record Active `review_to_audit` record.
 #' @param expected Ex-ante value (mm USD).
-#' @inheritParams predict_value
+#' @param confidence,effort RICE levels.
+#' @param cfg Configuration list.
 #' @return Data frame `predicted`, `low`, `high` (mm USD).
 #' @export
 predict_realised <- function(record, expected, confidence, effort, cfg) {

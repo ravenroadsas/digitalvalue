@@ -84,8 +84,12 @@ mod_audit_server <- function(id, state) {
                                   fmt_num(realization_pct(v, r$planned_value_mm_usd), 0, "%")))))
     })
     output$locked <- shiny::renderUI({
-      if (editable()) return(NULL)
-      htmltools::div(class = "dv-muted", "The audit form opens for superusers once execution is closed.")
+      r <- state$row()
+      if (editable() || is.null(r)) return(NULL)
+      htmltools::div(class = "dv-muted",
+        if (r$status == "Audited") "Audit recorded \u2013 see the audit history and the lifecycle comparison."
+        else if (r$status == "Closed") "The value audit is recorded by superusers."
+        else "The audit form opens once execution is closed.")
     })
 
     output$chart <- echarts4r::renderEcharts4r(echart_from_option(lifecycle_option(lifecycle())))

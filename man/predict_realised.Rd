@@ -11,6 +11,8 @@ predict_realised(record, expected, confidence, effort, cfg)
 
 \item{expected}{Ex-ante value (mm USD).}
 
+\item{confidence, effort}{RICE levels.}
+
 \item{cfg}{Configuration list.}
 }
 \value{

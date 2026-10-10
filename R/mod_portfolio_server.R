@@ -60,11 +60,11 @@ mod_portfolio_server <- function(id, state) {
     })
     output$table <- DT::renderDT({
       cols <- status_colors()
-      dark <- names(cols)[cols %in% c(mono$c600, mono$c700, mono$c800, mono$c900)]
+      text <- ifelse(cols %in% c(mono$c500, mono$c600, mono$c700, mono$c800, mono$c900), "#ffffff", mono$c900)
       dt_compact(table_data(), page_length = 12, dom = "ftp") |>
         DT::formatStyle("Status", fontWeight = "600",
                         backgroundColor = DT::styleEqual(names(cols), unname(cols)),
-                        color = DT::styleEqual(dark, rep("#ffffff", length(dark)), default = mono$c900))
+                        color = DT::styleEqual(names(cols), unname(text)))
     })
     shiny::observeEvent(input$table_rows_selected, {
       state$open(table_data()$ID[input$table_rows_selected])
