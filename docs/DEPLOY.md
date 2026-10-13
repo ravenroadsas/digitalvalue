@@ -128,7 +128,7 @@ The app reads the pins with `CONNECT_SERVER` and `CONNECT_API_KEY`, which Connec
 | **Contributor** (everyone) | Any user with access to the app | Register an initiative with its RICE |
 | **Owner** | *Relational*: the initiative's `owner` (chosen at registration), or its creator | Record the 4MC valuation, send it to a validator, mark the initiative delivered |
 | **Validator** | *Relational*: the user a pending 4MC validation was sent to | Validate the 4MC figures or request changes |
-| **Superuser** | **Roles table** `dv_roles` | Everything: edit locked records, expert review, value audit, revert a delivery, model calibration, Admin tabs |
+| **Superuser** | **Roles table** `dv_roles` | Everything (edit locked records, expert review, value audit, revert a delivery, model calibration, Admin tabs) except validating a 4MC sent to someone else; they can re-assign it |
 
 * **Relational roles.** Owner and validator depend on the initiative, so they are stored with the initiative data and **are not in the roles table**.
 * **Superusers.** Only superusers are configured. The full matrix is `permission_matrix()` in `R/fct_roles.R`, shown in *Admin → Parameters*.

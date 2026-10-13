@@ -23,7 +23,7 @@ test_that("permissions: everyone registers, owners valuate and deliver, validato
   expect_equal(m$action[m$everyone], "register")
   expect_setequal(m$action[m$owner], c("register", "valuate", "deliver"))
   expect_setequal(m$action[m$validator], c("register", "validate"))
-  expect_true(all(m$superuser))
+  expect_equal(m$action[!m$superuser], "validate")
   ana <- list(user = "aruiz", role = "contributor")
   bob <- list(user = "bob", role = "contributor")
   row <- data.frame(owner = "aruiz", created_by = "x", validation_status = "pending", validator = "bob")
@@ -37,6 +37,10 @@ test_that("permissions: everyone registers, owners valuate and deliver, validato
   expect_false(can(bob, "validate", transform(row, validation_status = "validated")))
   expect_false(can(ana, "audit", row))
   expect_true(can(list(user = "z", role = "superuser"), "undeliver", row))
+  # four eyes: a superuser validates only when they are the assigned validator
+  expect_false(can(list(user = "z", role = "superuser"), "validate", row))
+  expect_true(can(list(user = "bob", role = "superuser"), "validate", row))
+  expect_true(can(list(user = "z", role = "superuser"), "valuate", row))
   expect_false(can("contributor", "valuate"))
   expect_error(can("superuser", "fly"), "Unknown action")
 })
@@ -59,4 +63,9 @@ test_that("demo seeding is idempotent", {
   expect_gt(length(ids), 5)
   expect_setequal(db_get_value_models(con)$kind, names(value_model_kinds))
   expect_length(seed_demo_data(con, cfg), 0)
+})
+
+test_that("validation comments keep the note and the validator's comment", {
+  expect_equal(validation_comment_cell(c("Check uplift", NA, "a<b", NA), c("OK", "Fine", NA, "")),
+               c("Note: Check uplift<br>Validator: OK", "Validator: Fine", "Note: a&lt;b", ""))
 })

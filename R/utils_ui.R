@@ -91,9 +91,9 @@ app_user <- function(session) {
   list(user = user, groups = groups, role = user_role(user, groups))
 }
 
-dt_compact <- function(df, ..., page_length = 10, selection = "single") {
+dt_compact <- function(df, ..., page_length = 10, selection = "single", escape = TRUE) {
   opts <- utils::modifyList(list(pageLength = page_length, dom = "ftip", scrollX = TRUE,
                                  autoWidth = FALSE), list(...))
-  DT::datatable(df, rownames = FALSE, selection = selection,
+  DT::datatable(df, rownames = FALSE, selection = selection, escape = escape,
                 class = "compact stripe hover", options = opts)
 }

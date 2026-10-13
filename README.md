@@ -42,7 +42,7 @@ Every initiative goes through four statuses: **Recorded → Evaluated → Delive
 | Register an initiative with its RICE | ✓ | ✓ | ✓ | ✓ |
 | Modify a registration or its RICE after saving | | | | ✓ |
 | Record the 4MC valuation and send it to a validator | | ✓ | | ✓ |
-| Validate the 4MC valuation | | | ✓ | ✓ |
+| Validate the 4MC valuation (superusers can re-assign it) | | | ✓ | |
 | Expert review | | | | ✓ |
 | Mark delivered (revert: superuser only) | | ✓ | | ✓ |
 | Value audit, model calibration, Admin tabs | | | | ✓ |

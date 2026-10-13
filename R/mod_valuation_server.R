@@ -149,10 +149,10 @@ mod_valuation_server <- function(id, state) {
           if (!is.na(last$request_comment)) htmltools::div(class = "dv-muted", last$request_comment)),
         validated = callout(type = "low", title = "Validated",
           sprintf("By %s on %s.", who(last$decided_by), substr(last$decided_at, 1, 10)),
-          if (!is.na(last$decision_comment)) htmltools::div(class = "dv-muted", last$decision_comment)),
+          validation_comment_html(last$request_comment, last$decision_comment)),
         changes_requested = callout(type = "gate", title = "Changes requested",
           sprintf("By %s on %s.", who(last$decided_by), substr(last$decided_at, 1, 10)),
-          if (!is.na(last$decision_comment)) htmltools::div(last$decision_comment),
+          validation_comment_html(last$request_comment, last$decision_comment),
           htmltools::div(class = "dv-muted", "Update the calculation lines and send them again.")),
         if (!r$has_valuation) callout(type = if (r$req_valuation) "gate" else "low",
           if (r$req_valuation) "Record at least one value line, then send the 4MC to a validator."
@@ -166,6 +166,9 @@ mod_valuation_server <- function(id, state) {
         htmltools::div(class = "dv-actions",
           shiny::actionButton(ns("validate"), "Validate 4MC", class = "btn-primary btn-sm"),
           shiny::actionButton(ns("request_changes"), "Request changes", class = "btn-outline-secondary btn-sm")))
+      else if (vs == "pending") htmltools::div(class = "dv-muted", style = "margin:4px 0 8px",
+        sprintf("Only %s can validate or request changes%s.", who(r$validator),
+                if (state$user$role == "superuser") "; as a superuser you can re-assign the validation" else ""))
       htmltools::tagList(status_box, decide_form, send_form)
     })
 
@@ -174,8 +177,9 @@ mod_valuation_server <- function(id, state) {
       u <- state$users()
       dt_compact(data.frame(Sent = substr(v$requested_at, 1, 10), Validator = user_label(v$validator, u),
                             Status = gsub("_", " ", v$status), Decided = substr(v$decided_at, 1, 10),
-                            Comment = ifelse(is.na(v$decision_comment), v$request_comment, v$decision_comment),
-                            check.names = FALSE), page_length = 4, dom = "tp", selection = "none")
+                            Comment = validation_comment_cell(v$request_comment, v$decision_comment),
+                            check.names = FALSE), page_length = 4, dom = "tp", selection = "none",
+                 escape = FALSE)
     })
 
     shiny::observeEvent(input$send, {
@@ -214,4 +218,26 @@ mod_valuation_server <- function(id, state) {
       state$refresh()
     })
   })
+}
+
+#' Comment of a validation: the owner's note and the validator's comment
+#'
+#' Both are kept, one per line: `Note: ...` and `Validator: ...`.
+#' @param note Note sent with the request (owner).
+#' @param decision Comment of the validator.
+#' @return Character vector of HTML (escaped text, lines joined by `<br>`).
+#' @export
+validation_comment_cell <- function(note, decision) {
+  esc <- function(x) ifelse(is.na(x) | !nzchar(trimws(x)), NA, htmltools::htmlEscape(x))
+  n <- esc(note); d <- esc(decision)
+  out <- mapply(function(a, b) paste(c(if (!is.na(a)) paste("Note:", a),
+                                       if (!is.na(b)) paste("Validator:", b)), collapse = "<br>"),
+                n, d, USE.NAMES = FALSE)
+  as.character(out)
+}
+
+validation_comment_html <- function(note, decision) {
+  x <- validation_comment_cell(note, decision)
+  if (!nzchar(x)) return(NULL)
+  htmltools::div(class = "dv-muted", htmltools::HTML(x))
 }

@@ -108,7 +108,7 @@ Cuando se requiere la valoración 4MC, el responsable la envía a un **validador
 * **valida** las cifras: el paso queda completo; o
 * **solicita cambios**, con un comentario obligatorio: las líneas se desbloquean para el responsable, que las corrige y las vuelve a enviar.
 
-Cada solicitud y decisión se guarda con su autor, fecha y comentario. Enviar a otro validador reemplaza la solicitud pendiente.
+Cada solicitud y decisión se guarda con su autor, fecha y comentario. Solo el validador asignado puede decidir; un superusuario puede reasignar la solicitud a otro validador, lo que reemplaza la pendiente. La nota del responsable y el comentario del validador se conservan ambos en el historial.
 
 ## 4 · Revisión experta
 
@@ -161,7 +161,7 @@ Los modelos son una herramienta de aprendizaje, no un sustituto de la valoració
 | Registrar una iniciativa con su RICE | ✓ | ✓ | ✓ | ✓ |
 | Modificar un registro o su RICE después de guardarlo | | | | ✓ |
 | Registrar la valoración 4MC y enviarla a un validador | | ✓ | | ✓ |
-| Validar la valoración 4MC | | | ✓ | ✓ |
+| Validar la valoración 4MC (un superusuario puede reasignarla) | | | ✓ | |
 | Revisión experta | | | | ✓ |
 | Marcar como entregada | | ✓ | | ✓ |
 | Auditoría de valor; calibrar modelos de valor; administración | | | | ✓ |

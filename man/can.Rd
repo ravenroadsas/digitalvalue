@@ -17,7 +17,8 @@ can(usr, action, row = NULL)
 Logical.
 }
 \description{
-Superusers can do everything. Otherwise the action is allowed to everyone,
-to the owner of \code{row}, or to the validator a pending 4MC validation of
-\code{row} is addressed to, as listed in \code{\link[=permission_matrix]{permission_matrix()}}.
+An action is allowed to superusers, to everyone, to the owner of \code{row}, or
+to the validator a pending 4MC validation of \code{row} is addressed to, as
+listed in \code{\link[=permission_matrix]{permission_matrix()}}. Superusers can do everything except
+validating a 4MC valuation sent to someone else.
 }

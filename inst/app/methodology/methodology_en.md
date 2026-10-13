@@ -108,7 +108,7 @@ When a 4MC valuation is required, the owner sends it to a **validator**: any Pos
 * **validates** the figures: the step is complete; or
 * **requests changes**, with a mandatory comment: the lines are unlocked for the owner, who corrects them and sends them again.
 
-Every request and decision is stored with its author, date and comment. Sending to another validator supersedes the pending request.
+Every request and decision is stored with its author, date and comment. Only the assigned validator can decide; a superuser can re-assign the request to another validator, which supersedes the pending one. The owner's note and the validator's comment are both kept in the history.
 
 ## 4 · Expert review
 
@@ -161,7 +161,7 @@ The models are a learning tool, not a substitute for the valuation: they show ho
 | Register an initiative with its RICE | ✓ | ✓ | ✓ | ✓ |
 | Modify a registration or its RICE after saving | | | | ✓ |
 | Record the 4MC valuation and send it to a validator | | ✓ | | ✓ |
-| Validate the 4MC valuation | | | ✓ | ✓ |
+| Validate the 4MC valuation (superusers can re-assign it) | | | ✓ | |
 | Expert review | | | | ✓ |
 | Mark delivered | | ✓ | | ✓ |
 | Value audit; calibrate value models; administration | | | | ✓ |

@@ -30,7 +30,8 @@ permission_matrix <- function() {
     everyone  = c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE),
     owner     = c(TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE),
     validator = c(TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE),
-    superuser = TRUE,
+    # four eyes: only the assigned validator validates (a superuser can re-assign)
+    superuser = c(TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
     stringsAsFactors = FALSE)
 }
 
@@ -84,9 +85,10 @@ is_owner <- function(usr, row) {
 
 #' Can a user perform an action (on an initiative)?
 #'
-#' Superusers can do everything. Otherwise the action is allowed to everyone,
-#' to the owner of `row`, or to the validator a pending 4MC validation of
-#' `row` is addressed to, as listed in [permission_matrix()].
+#' An action is allowed to superusers, to everyone, to the owner of `row`, or
+#' to the validator a pending 4MC validation of `row` is addressed to, as
+#' listed in [permission_matrix()]. Superusers can do everything except
+#' validating a 4MC valuation sent to someone else.
 #' @param usr A user list from [app_user()], or a role name.
 #' @param action Action id (see [permission_matrix()]).
 #' @param row Optional initiative row (see [compute_portfolio()]).
@@ -97,7 +99,7 @@ can <- function(usr, action, row = NULL) {
   m <- permission_matrix()
   if (!action %in% m$action) stop("Unknown action: ", action)
   p <- m[m$action == action, ]
-  if (identical(usr$role, "superuser") || p$everyone) return(TRUE)
+  if ((identical(usr$role, "superuser") && p$superuser) || p$everyone) return(TRUE)
   if (is.null(row) || !nrow(row)) return(FALSE)
   if (p$owner && is_owner(usr, row)) return(TRUE)
   if (p$validator && isTRUE(row$validation_status == "pending") && isTRUE(row$validator == usr$user))
