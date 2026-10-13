@@ -4,12 +4,15 @@
 \alias{user_role}
 \title{Resolve the role of a user}
 \usage{
-user_role(user, groups = character(0))
+user_role(user, groups = character(0), roles = current_roles())
 }
 \arguments{
 \item{user}{User name.}
 
 \item{groups}{Groups of the user (Posit Connect).}
+
+\item{roles}{Roles table (see \code{\link[=read_roles]{read_roles()}}); defaults to the current
+assignments, see \code{\link[=current_roles]{current_roles()}}.}
 }
 \value{
 \code{"superuser"} or \code{"contributor"}.

@@ -8,10 +8,13 @@
 #   superuser   : everything, including editing locked records, the expert
 #                 review, the value audit, model calibration and admin.
 #
-# Superusers are identified from the Posit Connect identity: members of the
-# group in `DV_SUPERUSER_GROUP`, or users listed in `DV_SUPERUSERS`
-# (comma-separated). With neither variable set (local development) everyone
-# is superuser; `DV_DEV_ROLE=contributor` simulates a contributor locally.
+# Superusers are identified from the Posit Connect identity and the roles
+# table (pin `dv_roles` / roles.csv, see read_roles()): listed users, and
+# members of listed groups. `DV_SUPERUSERS` / `DV_SUPERUSER_GROUP`
+# (comma-separated) are still honoured as a bootstrap. With no superuser
+# configured at all, everyone is superuser locally (development;
+# `DV_DEV_ROLE=contributor` simulates a contributor) but nobody is on Posit
+# Connect, so a missing pin never opens the app to everyone.
 
 #' Permission matrix
 #' @return Data frame `action`, `label`, `everyone`, `owner`, `validator`, `superuser`.
@@ -31,20 +34,43 @@ permission_matrix <- function() {
     stringsAsFactors = FALSE)
 }
 
+#' Is the app running on Posit Connect?
+#' @return Logical.
+#' @export
+on_connect <- function() {
+  identical(Sys.getenv("RSTUDIO_PRODUCT"), "CONNECT")
+}
+
+#' Superuser principals from the roles table and the environment
+#' @param roles Roles table (see [read_roles()]).
+#' @return List `users`, `groups` (character vectors).
+#' @export
+superusers <- function(roles = NULL) {
+  env <- function(v) {
+    x <- trimws(strsplit(Sys.getenv(v), ",")[[1]])
+    x[nzchar(x)]
+  }
+  roles <- normalise_roles(roles)
+  su <- roles[roles$role == "superuser", , drop = FALSE]
+  list(users = unique(c(su$principal[su$type == "user"], env("DV_SUPERUSERS"))),
+       groups = unique(c(su$principal[su$type == "group"], env("DV_SUPERUSER_GROUP"))))
+}
+
 #' Resolve the role of a user
 #' @param user User name.
 #' @param groups Groups of the user (Posit Connect).
+#' @param roles Roles table (see [read_roles()]); defaults to the current
+#'   assignments, see [current_roles()].
 #' @return `"superuser"` or `"contributor"`.
 #' @export
-user_role <- function(user, groups = character(0)) {
-  dev <- Sys.getenv("DV_DEV_ROLE")
-  grp <- Sys.getenv("DV_SUPERUSER_GROUP")
-  usr <- trimws(strsplit(Sys.getenv("DV_SUPERUSERS"), ",")[[1]])
-  usr <- usr[nzchar(usr)]
-  if (!nzchar(grp) && !length(usr)) {
+user_role <- function(user, groups = character(0), roles = current_roles()) {
+  su <- superusers(roles)
+  if (!length(su$users) && !length(su$groups)) {
+    if (on_connect()) return("contributor")
+    dev <- Sys.getenv("DV_DEV_ROLE")
     return(if (dev %in% c("contributor", "superuser")) dev else "superuser")
   }
-  if ((nzchar(grp) && grp %in% groups) || user %in% usr) "superuser" else "contributor"
+  if (any(groups %in% su$groups) || user %in% su$users) "superuser" else "contributor"
 }
 
 #' Is the user the owner (or creator) of an initiative?

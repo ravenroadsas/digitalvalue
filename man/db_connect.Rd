@@ -6,17 +6,24 @@
 \usage{
 db_connect(
   path = Sys.getenv("DV_DB_PATH", "digitalvalue.duckdb"),
-  driver = db_driver()
+  driver = db_driver(),
+  wait = as.numeric(Sys.getenv("DV_DB_LOCK_WAIT", "30"))
 )
 }
 \arguments{
 \item{path}{Database file (\code{DV_DB_PATH}), \code{":memory:"} for an in-memory DB.}
 
 \item{driver}{Driver name, see \code{\link[=db_driver]{db_driver()}}.}
+
+\item{wait}{Seconds to keep retrying while the file is locked
+(\code{DV_DB_LOCK_WAIT}, default 30).}
 }
 \value{
 A DBI connection.
 }
 \description{
-Connect to the application database
+A DuckDB file can be open read-write by one process only. When another
+process holds it (typically the previous version of the app on Posit
+Connect, still serving open sessions after a redeploy), the connection is
+retried for \code{wait} seconds before failing with an explicit message.
 }

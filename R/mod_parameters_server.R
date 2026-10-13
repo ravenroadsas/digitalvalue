@@ -6,7 +6,7 @@ mod_parameters_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
     cfg <- state$cfg
     output$source <- shiny::renderUI(callout(type = "info", title = "Configuration source",
-      sprintf("Loaded from %s. Edit the pins (dv_parameters, dv_rice_scales, dv_event_map) on Posit Connect ",
+      sprintf("Loaded from %s. Edit the pins (dv_parameters, dv_rice_scales, dv_event_map, dv_roles) on Posit Connect ",
               toupper(cfg$source)),
       "or the CSV files in inst/config; changes apply when the app process restarts."))
     output$parameters <- DT::renderDT(dt_compact(cfg$parameters, page_length = 20, selection = "none"))
@@ -19,9 +19,15 @@ mod_parameters_server <- function(id, state) {
                             Validator = yn(m$validator), Superuser = yn(m$superuser)),
                  dom = "t", selection = "none", ordering = FALSE)
     })
-    output$roles <- shiny::renderUI(htmltools::div(class = "dv-muted", style = "margin-top:6px",
-      sprintf("Superusers: Connect group '%s', users '%s'. You are %s (%s).",
-              Sys.getenv("DV_SUPERUSER_GROUP", "\u2013"), Sys.getenv("DV_SUPERUSERS", "\u2013"),
-              state$user$user, state$user$role)))
+    output$roles <- shiny::renderUI({
+      su <- superusers(cfg$roles)
+      htmltools::div(class = "dv-muted", style = "margin-top:6px",
+        sprintf("Superusers (pin dv_roles / roles.csv, plus DV_SUPERUSERS / DV_SUPERUSER_GROUP): users %s; groups %s.",
+                if (length(su$users)) paste(su$users, collapse = ", ") else "\u2013",
+                if (length(su$groups)) paste(su$groups, collapse = ", ") else "\u2013"),
+        htmltools::br(),
+        sprintf("You are %s (%s); your Connect groups: %s.", state$user$user, state$user$role,
+                if (length(state$user$groups)) paste(state$user$groups, collapse = ", ") else "none"))
+    })
   })
 }

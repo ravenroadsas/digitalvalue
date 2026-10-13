@@ -24,17 +24,80 @@ db_driver <- function() {
 
 #' Connect to the application database
 #'
+#' A DuckDB file can be open read-write by one process only. When another
+#' process holds it (typically the previous version of the app on Posit
+#' Connect, still serving open sessions after a redeploy), the connection is
+#' retried for `wait` seconds before failing with an explicit message.
 #' @param path Database file (`DV_DB_PATH`), `":memory:"` for an in-memory DB.
 #' @param driver Driver name, see [db_driver()].
+#' @param wait Seconds to keep retrying while the file is locked
+#'   (`DV_DB_LOCK_WAIT`, default 30).
 #' @return A DBI connection.
 #' @export
 db_connect <- function(path = Sys.getenv("DV_DB_PATH", "digitalvalue.duckdb"),
-                       driver = db_driver()) {
-  switch(driver,
+                       driver = db_driver(),
+                       wait = as.numeric(Sys.getenv("DV_DB_LOCK_WAIT", "30"))) {
+  open <- function() switch(driver,
     duckdb = DBI::dbConnect(duckdb::duckdb(), dbdir = path),
     sqlite = DBI::dbConnect(RSQLite::SQLite(), path),
     stop("Unsupported DV_DB_DRIVER: ", driver)
   )
+  deadline <- Sys.time() + wait
+  repeat {
+    con <- tryCatch(open(), error = function(e) e)
+    if (!inherits(con, "error")) return(con)
+    locked <- grepl("lock", conditionMessage(con), ignore.case = TRUE)
+    if (!locked) stop(con)
+    if (Sys.time() >= deadline) {
+      stop("The database ", path, " is locked by another process (usually a previous version ",
+           "of the app still serving open sessions). Close the other sessions or restart the ",
+           "content, then reload. Original error: ", conditionMessage(con), call. = FALSE)
+    }
+    Sys.sleep(1)
+  }
+}
+
+#' Back up the database once a day
+#'
+#' Exports every table (DuckDB `EXPORT DATABASE`, Parquet; CSV for other
+#' drivers) to `<dir>/<YYYY-MM-DD>` unless that folder exists, then keeps
+#' only the `keep` most recent backups. Restore a DuckDB backup into a new,
+#' empty database file with `IMPORT DATABASE '<folder>'`. Errors are turned
+#' into warnings: a failed backup never stops the app.
+#' @param con A DBI connection.
+#' @param dir Backup directory (`DV_BACKUP_DIR`); nothing is done when empty.
+#' @param keep Number of daily backups kept (`DV_BACKUP_KEEP`, default 14).
+#' @param date Backup date.
+#' @return Invisibly, the backup folder written, or `NULL`.
+#' @export
+db_backup <- function(con, dir = Sys.getenv("DV_BACKUP_DIR"),
+                      keep = as.integer(Sys.getenv("DV_BACKUP_KEEP", "14")),
+                      date = Sys.Date()) {
+  if (!nzchar(dir) || is.null(con)) return(invisible(NULL))
+  target <- file.path(dir, format(date, "%Y-%m-%d"))
+  if (dir.exists(target)) return(invisible(NULL))
+  tryCatch({
+    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+    tmp <- paste0(target, ".partial")
+    unlink(tmp, recursive = TRUE)
+    if (inherits(con, "duckdb_connection")) {
+      DBI::dbExecute(con, sprintf("EXPORT DATABASE '%s' (FORMAT PARQUET)", gsub("'", "''", tmp)))
+    } else {
+      dir.create(tmp)
+      for (tb in DBI::dbListTables(con)) {
+        utils::write.csv(DBI::dbReadTable(con, tb), file.path(tmp, paste0(tb, ".csv")),
+                         row.names = FALSE)
+      }
+    }
+    file.rename(tmp, target)
+    old <- sort(list.files(dir, pattern = "^\\d{4}-\\d{2}-\\d{2}$", full.names = TRUE),
+                decreasing = TRUE)
+    unlink(utils::tail(old, -keep), recursive = TRUE)
+    invisible(target)
+  }, error = function(e) {
+    warning("Database backup failed: ", conditionMessage(e), call. = FALSE)
+    invisible(NULL)
+  })
 }
 
 #' Disconnect (and shut down an embedded DuckDB instance)

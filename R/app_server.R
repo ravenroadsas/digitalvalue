@@ -2,7 +2,8 @@
 #' @param input,output,session Shiny objects.
 #' @export
 app_server <- function(input, output, session) {
-  con <- .dv$con
+  con <- db_acquire()
+  session$onSessionEnded(function() db_release(force = FALSE))
   cfg <- .dv$cfg
   usr <- app_user(session)
 

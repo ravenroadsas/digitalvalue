@@ -4,7 +4,7 @@
 \alias{build_config}
 \title{Assemble and validate a configuration object from its tables}
 \usage{
-build_config(parameters, scales, event_map, source = "custom")
+build_config(parameters, scales, event_map, source = "custom", roles = NULL)
 }
 \arguments{
 \item{parameters}{Data frame with columns \code{key}, \code{value}.}
@@ -14,6 +14,8 @@ build_config(parameters, scales, event_map, source = "custom")
 \item{event_map}{Data frame with columns \code{pattern}, \code{activity}, \code{process_phase}.}
 
 \item{source}{Label of the configuration source.}
+
+\item{roles}{Roles table (see \code{\link[=read_roles]{read_roles()}}), optional.}
 }
 \value{
 A configuration list (see \code{\link[=load_config]{load_config()}}).

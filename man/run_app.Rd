@@ -15,5 +15,8 @@ A shiny app object.
 \description{
 Opens the database (\code{DV_DB_PATH}, \code{DV_DB_DRIVER}), creates the schema,
 seeds demo data when the database is empty and \code{DV_SEED_DEMO} is not
-\code{"false"}, and loads the configuration (pins or CSV).
+\code{"false"}, takes the daily backup (\code{DV_BACKUP_DIR}) and loads the
+configuration (pins or CSV). The database is released when the process
+has no open session, so that another process (e.g. a new version of the
+app) can open a DuckDB file; it is reopened by the next session.
 }

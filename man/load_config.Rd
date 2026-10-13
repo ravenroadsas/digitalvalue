@@ -16,7 +16,8 @@ load_config(
 }
 \value{
 A list with \code{params} (named list), \code{parameters} (data frame),
-\code{scales} (data frame), \code{event_map} (data frame) and \code{source}.
+\code{scales} (data frame), \code{event_map} (data frame), \code{roles} (data frame)
+and \code{source}.
 }
 \description{
 Configuration parameters (valuation parameters, gate thresholds, RICE
@@ -25,6 +26,9 @@ Connect they are read from pins (set \code{DV_PINS_BOARD=connect}); otherwise
 the CSV files shipped in \code{inst/config} (or \code{DV_CONFIG_DIR}) are used.
 }
 \details{
+The optional \code{roles} table (pin \code{dv_roles}, file \code{roles.csv}) lists the
+superusers; see \code{\link[=read_roles]{read_roles()}}.
+
 Environment variables are reserved for infrastructure references:
 \code{DV_PINS_BOARD}, \code{DV_PINS_OWNER}, \code{DV_CONFIG_DIR}.
 }

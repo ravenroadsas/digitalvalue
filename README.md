@@ -48,7 +48,7 @@ Every initiative goes through four statuses: **Recorded → Evaluated → Delive
 | Value audit, model calibration, Admin tabs | | | | ✓ |
 
 * **Owner**: the initiative's owner or its creator. **Validator**: the user a pending 4MC validation is addressed to.
-* **Superusers** are identified from the Posit Connect login: members of the group in `DV_SUPERUSER_GROUP`, or users listed in `DV_SUPERUSERS` (comma-separated). When neither variable is set (local development), everyone is a superuser; `DV_DEV_ROLE=contributor` simulates a contributor.
+* **Superusers** are listed in the roles table (pin `dv_roles` on Connect, `inst/config/roles.csv` locally) as Posit Connect users or groups. `DV_SUPERUSERS` / `DV_SUPERUSER_GROUP` are still honoured as a bootstrap. Changes are picked up within 5 minutes, without a restart. With no superuser configured, everyone is superuser locally (`DV_DEV_ROLE=contributor` simulates a contributor) and nobody is on Posit Connect. See [docs/DEPLOY.md](docs/DEPLOY.md#4-roles-table-dv_roles).
 * **Enforcement**: forms a user cannot use are hidden or disabled, and every write is checked again on the server (`can()` in `R/fct_roles.R`).
 
 **User directory.** Owners and validators are picked from the Posit Connect users, read through the Connect Server API (`GET /__api__/v1/users`). This uses `CONNECT_SERVER` (provided by Connect) and `CONNECT_API_KEY` (add it as a content variable). The list is cached for one hour. Elsewhere the app uses `inst/config/users.csv` (or `DV_USERS_FILE`).
@@ -148,12 +148,12 @@ Charts are built as plain ECharts option lists (`*_option()` functions, unit tes
 
 ### Configuration
 
-Parameters, gates, RICE weights and the event map are stored as tables:
+Parameters, gates, RICE weights, the event map and the superusers are stored as tables:
 
-* **Posit Connect**: set `DV_PINS_BOARD=connect` (and optionally `DV_PINS_OWNER`), then publish the pins once with `digitalvalue::publish_config_pins()`.
+* **Posit Connect**: set `DV_PINS_BOARD=connect` (and optionally `DV_PINS_OWNER`), then publish the pins once with `digitalvalue::publish_config_pins()` (`dv_parameters`, `dv_rice_scales`, `dv_event_map`, `dv_roles`).
 * **Local / fallback**: the CSV files in `inst/config`.
 
-Environment variables are used only for infrastructure and identity: `DV_DB_PATH`, `DV_DB_DRIVER`, `DV_PINS_BOARD`, `DV_PINS_OWNER`, `DV_SUPERUSER_GROUP`, `DV_SUPERUSERS`, `DV_SEED_DEMO`, `CONNECT_API_KEY`, `DV_USERS_FILE`.
+Environment variables are used only for infrastructure: `DV_DB_PATH`, `DV_DB_DRIVER`, `DV_DB_LOCK_WAIT`, `DV_BACKUP_DIR`, `DV_BACKUP_KEEP`, `DV_PINS_BOARD`, `DV_PINS_OWNER`, `DV_ROLES_TTL`, `DV_SEED_DEMO`, `CONNECT_API_KEY`, `DV_USERS_FILE` (and, as a bootstrap, `DV_SUPERUSERS`, `DV_SUPERUSER_GROUP`). See [docs/DEPLOY.md](docs/DEPLOY.md#7-environment-variables).
 
 ### Database (DuckDB)
 
@@ -169,7 +169,8 @@ Environment variables are used only for infrastructure and identity: `DV_DB_PATH
   * `value_models`: published model versions
   * `status_history`, `event_log`
 * **Migration to an enterprise database**: only `R/data_db.R` changes. Add a driver branch in `db_connect()` (e.g. `odbc::odbc()`). The SQL is ANSI with `?` placeholders (`sql_params()` rewrites them for PostgreSQL), and timestamps are ISO-8601 UTC text.
-* **Single writer**: DuckDB allows only one writing process. On Posit Connect, keep **max processes = 1** during the pilot, or move to a server database before scaling out.
+* **Single writer**: DuckDB allows only one writing process. On Posit Connect, keep **max processes = 1**, or move to a server database before scaling out. A process opens the file only while it has sessions; a process that finds it locked retries for `DV_DB_LOCK_WAIT` seconds.
+* **Backups**: with `DV_BACKUP_DIR` set, the app exports the database once a day (Parquet, `EXPORT DATABASE`) and keeps `DV_BACKUP_KEEP` copies.
 
 ## Process mining
 
@@ -199,7 +200,7 @@ pkgload::load_all(); run_app()      # development
 shiny::runApp()                      # uses app.R
 ```
 
-**Posit Connect**: `rsconnect::deployApp(appFiles = c("app.R", "DESCRIPTION", "NAMESPACE", "R", "inst"))`. Set `DV_DB_PATH` to a persistent location, `DV_SUPERUSER_GROUP` (or `DV_SUPERUSERS`) and `DV_PINS_BOARD=connect`.
+**Posit Connect**: step-by-step guide in [docs/DEPLOY.md](docs/DEPLOY.md) (shared database folder, pins, roles, runtime settings, backups).
 
 **Tests**: `devtools::test()`. The tests run on an in-memory DuckDB.
 
