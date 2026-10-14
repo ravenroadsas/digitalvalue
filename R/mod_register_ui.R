@@ -17,8 +17,7 @@ mod_register_ui <- function(id) {
                                 options = list(placeholder = "Search users\u2026")),
           shiny::textInput(ns("business_unit"), "Business unit")),
         bslib::layout_columns(col_widths = c(6, 6),
-          shiny::dateInput(ns("start_date"), "Start"),
-          shiny::dateInput(ns("end_date"), "End", value = Sys.Date() + 180))),
+          shiny::dateInput(ns("start_date"), "Start"))),
       htmltools::div(
         htmltools::div(class = "dv-section", "RICE"),
         bslib::layout_columns(col_widths = c(6, 6),

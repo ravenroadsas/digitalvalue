@@ -5,7 +5,7 @@ Shiny application, built as an R package, for recording digital initiatives and 
 The app has two main tabs:
 
 * **Initiative**: select an initiative, or register a new one, and work through its lifecycle.
-* **Portfolio**: KPIs, the value-vs-effort and status charts, alerts, the validations waiting for you, and the register of all initiatives. Search an initiative, or click it in the register, to highlight it in the charts; **Open initiative** jumps to it.
+* **Portfolio**: KPIs, the evaluation funnel, the value-vs-effort and status charts, alerts, the validations waiting for you, and the register of all initiatives. Search an initiative, or click it in the register, to highlight it in the charts; **Open initiative** jumps to it.
 
 A **Methodology** tab, open to everyone, explains the method in **English and Spanish**: a summary with the principles, then one section per step, the gates, the value models, roles, KPIs and a glossary. The text is in `inst/app/methodology/methodology_en.md` and `methodology_es.md`, so it can be edited without touching code. Thresholds, weights and conversion factors are written as `{{placeholders}}` and filled from the active configuration, so the document always matches what the app does.
 
@@ -24,7 +24,7 @@ Every initiative goes through four statuses: **Recorded → Evaluated → Delive
 | View | Step | What is recorded | Who | Required when |
 |---|---|---|---|---|
 | **Evaluation** (before delivery) | 1 Registration & RICE | Name, description, owner (searched in the Posit Connect directory), unit, dates and the RICE inputs, in one form | **Everyone**. The record is then locked; only a superuser can modify it | Always |
-| | 2 4MC valuation | Calculation lines per metric (P, R, M, T and cost C), each with its formula, parameters and comment | Owner (or superuser) | Effort ≥ L or RICE score ≥ 3 (*valuation gate*) |
+| | 2 4MC valuation | Calculation lines per metric (P, R, M, T, cost C and intangible I), each with its formula, parameters and comment | Owner (or superuser) | Effort ≥ L or RICE score ≥ 3 (*valuation gate*) |
 | | 3 4MC validation | The owner sends the 4MC to a validator (a Posit Connect user), who validates it or requests changes with a comment. Lines are locked while pending or once validated | Validator | Whenever the 4MC is required |
 | | 4 Expert review | Manual evaluation, Approve or Rework, with its **own 4MC figures**, including the validated cost C | Superuser | Ex-ante value ≥ 5 mm USD or cost ≥ 1 mm USD (*review gate*) |
 | **Realisation** (after delivery) | 5 Delivery | Mark as delivered (a superuser can revert it) | Owner or superuser | When Evaluated |
@@ -69,7 +69,7 @@ Every initiative goes through four statuses: **Recorded → Evaluated → Delive
 
 ### 4MC metrics
 
-**4MC** = four value metrics (**P**roduction, **R**eserves, **M**onetary, **T**ime saved) plus **C**ost.
+**4MC** = four value metrics (**P**roduction, **R**eserves, **M**onetary, **T**ime saved) plus **C**ost. **Intangible** benefits (**I**) can be recorded too, as free text with no monetary value: they never add to the value, but are part of the valuation the validator checks.
 
 The same metrics are used at every stage: the 4MC valuation, the expert review and the value audit. There are four value metrics (P, R, M, T) and one cost metric (C). Cost is tracked next to value but **never added to it**. It gives the value/cost ratio, and its planned value feeds the cost side of the review gate. The planned cost is the approved review's C, else the 4MC cost estimate, else the cost entered at registration.
 
@@ -114,6 +114,7 @@ Two log-linear regressions chain the lifecycle (`R/fct_value_model.R`):
   * value: pipeline (recorded), evaluated, delivered and realised value, and value/cost;
   * accuracy: realisation rate (audited ÷ ex-ante) and mean adoption;
   * process: gate compliance (share of required 4MCs validated and reviews approved), evaluation lead time (registration → Evaluated) and open alerts.
+* **Evaluation funnel** (`evaluation_funnel()`): registered initiatives → RICE only → 4MC valuation (pending, pending validation, validated) → expert review (pending, approved) → post-delivery audit (awaiting audit, audited). Each stage shows its count, its share of the registered initiatives and the breakdown.
 * **Prioritisation chart** (value vs effort, bubble size = reach): the y-axis is reach × impact × confidence (RICE without the effort divisor), the ex-ante value, or the value / model estimate. On the R × I × C view the RICE-score gate is drawn as a staircase (threshold × effort weight): initiatives above it pass the valuation gate. Single-hue palette: evaluated initiatives are dark circles, delivered ones the darkest diamonds, audited ones squares. A highlighted initiative gets an amber ring and label, and its status bar is outlined.
 
 ## Architecture

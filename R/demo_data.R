@@ -49,6 +49,7 @@ seed_demo_data <- function(con, cfg) {
          cost = 0.15, rice = list(3000, "S", "High", "S", "Survey of 200 field staff."),
          plan = NULL, review = NULL, final = "Prioritized"),
     list(name = "Corrosion risk prediction", bu = "Integrity", owner = "erios",
+         intangible = "Stronger integrity culture: inspectors focus on the highest-risk lines.",
          desc = "Predicts pipeline corrosion hot spots to prevent failures.",
          cost = 1.2, rice = list(60, "L", "Low", "L", "Inspection data incomplete."),
          plan = list(list("m_risk_avoided", list(cost_mm_usd = 12, prob_before = 8, prob_after = 5),
@@ -137,6 +138,10 @@ seed_demo_data <- function(con, cfg) {
       db_add_m4_line(con, id, m4_calculate("c_direct", list(capex_mm_usd = d$cost * 0.8,
                                                            opex_mm_usd_yr = d$cost * 0.2, years = 1), cfg),
                      comment = "Build cost plus first-year run cost.", user = d$owner, time = at(day + 10))
+    }
+    if (!is.null(d[["intangible"]])) {
+      db_add_m4_line(con, id, m4_intangible(d[["intangible"]]), comment = d[["intangible"]],
+                     user = d$owner, time = at(day + 10))
     }
     if (length(d$plan)) {
       vid <- db_request_validation(con, id, "dval", d$owner, "Please validate the 4MC figures.",

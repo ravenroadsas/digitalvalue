@@ -267,6 +267,21 @@ m4_calculate <- function(method, params, cfg) {
                       else paste0(res$formula_text, " \u2192 ", fmt(mm, 3), " mm USD"))
 }
 
+#' Record an intangible benefit (metric I)
+#'
+#' Intangible benefits (e.g. safety culture, reputation, knowledge retention)
+#' are recorded as free text with no monetary value: they never add to the
+#' 4MC value, but they are part of the valuation sent to the validator.
+#' @param text Description of the intangible benefit.
+#' @return A calculation list like [m4_calculate()] (metric `"I"`, value 0).
+#' @export
+m4_intangible <- function(text) {
+  text <- trimws(text %||% "")
+  if (!nzchar(text)) stop("Describe the intangible benefit")
+  list(method = "intangible", metric = "I", params = list(), value = NA_real_, unit = "text",
+       value_mm_usd = 0, formula_text = "Intangible benefit \u00b7 not monetised")
+}
+
 #' Summarise 4MC lines by metric
 #' @param lines Data frame of 4MC lines (see [db_get_m4_lines()]).
 #' @return Data frame with one row per metric: `metric`, `label`, `unit`,

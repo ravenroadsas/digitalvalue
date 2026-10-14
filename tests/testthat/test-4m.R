@@ -118,3 +118,18 @@ test_that("cost lines do not count as a valuation and feed the planned cost", {
   expect_true(pf$has_valuation)
   expect_equal(m4_from_lines(db_get_m4_lines(con, id))$C, 2)
 })
+
+test_that("intangible benefits are recorded as text with no monetary value", {
+  cfg <- test_cfg()
+  con <- test_con()
+  expect_error(m4_intangible("  "), "Describe")
+  id <- reg(con, cfg, "Culture", effort = "XL")
+  db_add_m4_line(con, id, m4_intangible("Safety culture"), comment = "Safety culture", user = "u1")
+  l <- db_get_m4_lines(con, id)
+  expect_equal(l$metric, "I")
+  expect_equal(l$value_mm_usd, 0)
+  pf <- compute_portfolio(db_portfolio(con), cfg)
+  expect_equal(pf$plan_value_mm_usd, 0)
+  expect_true(pf$has_valuation)              # documents the valuation, for the validator
+  expect_equal(sum(m4_summary(l)$value_mm_usd), 0)
+})

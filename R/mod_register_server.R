@@ -10,7 +10,7 @@ mod_register_server <- function(id, state, new_mode = function() FALSE) {
   shiny::moduleServer(id, function(input, output, session) {
     cfg <- state$cfg
     fields <- c("name", "description", "owner", "business_unit", "start_date",
-                "end_date", "users", "impact", "confidence", "effort", "rationale")
+                "users", "impact", "confidence", "effort", "rationale")
     shiny::updateSelectInput(session, "impact", choices = rice_levels(cfg, "impact"), selected = "M")
     shiny::updateSelectInput(session, "confidence", choices = rice_levels(cfg, "confidence"), selected = "Low")
     shiny::updateSelectInput(session, "effort", choices = rice_levels(cfg, "effort"), selected = "M")
@@ -38,7 +38,6 @@ mod_register_server <- function(id, state, new_mode = function() FALSE) {
                                   choices = user_choices(state$users(), owner))
       shiny::updateTextInput(session, "business_unit", value = g(i, "business_unit"))
       if (nzchar(g(i, "start_date"))) shiny::updateDateInput(session, "start_date", value = g(i, "start_date"))
-      if (nzchar(g(i, "end_date"))) shiny::updateDateInput(session, "end_date", value = g(i, "end_date"))
       has_rc <- !is.null(rc) && nrow(rc) > 0
       shiny::updateNumericInput(session, "users", value = if (has_rc) rc$users else 100)
       shiny::updateSelectInput(session, "impact", selected = if (has_rc) rc$impact else "M")
@@ -97,7 +96,7 @@ mod_register_server <- function(id, state, new_mode = function() FALSE) {
       d <- function(x) if (length(x) && !is.na(x)) format(x) else NA
       list(name = input$name, description = input$description, owner = input$owner,
            business_unit = input$business_unit,
-           start_date = d(input$start_date), end_date = d(input$end_date))
+           start_date = d(input$start_date))
     }
 
     shiny::observeEvent(input$save, {

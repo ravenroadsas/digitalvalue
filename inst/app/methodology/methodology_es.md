@@ -38,7 +38,7 @@ Esta aplicación evalúa y da seguimiento al valor. **No** aprueba ni rechaza la
 
 ## 1 · Registro y RICE
 
-La iniciativa se registra con nombre, descripción breve, **responsable** (buscado en el directorio de usuarios de Posit Connect), unidad de negocio y fechas previstas. **Los datos RICE se registran en el mismo formulario.** El costo no se ingresa aquí: forma parte de la valoración 4MC (métrica C).
+La iniciativa se registra con nombre, descripción breve, **responsable** (buscado en el directorio de usuarios de Posit Connect), unidad de negocio y fecha prevista de inicio. **Los datos RICE se registran en el mismo formulario.** El costo no se ingresa aquí: forma parte de la valoración 4MC (métrica C).
 
 **RICE** es una puntuación cualitativa para comparar y ordenar iniciativas:
 
@@ -71,7 +71,7 @@ Una iniciativa permanece **Recorded** hasta completar todos los pasos requeridos
 
 ## 2 · Valoración 4MC
 
-El **responsable** (o un superusuario) cuantifica la iniciativa con cinco métricas:
+El **responsable** (o un superusuario) cuantifica la iniciativa con cinco métricas, más los beneficios intangibles registrados como texto:
 
 | Métrica | Unidad | Conversión a mm USD | Horizonte |
 |---|---|---|---|
@@ -80,6 +80,7 @@ El **responsable** (o un superusuario) cuantifica la iniciativa con cinco métri
 | **M** · Monetario | mm USD por año | Tal como se ingresa | Anual |
 | **T** · Tiempo ahorrado | miles de horas por año | khoras × 1.000 × {{time_value_usd_h}} USD/h | Anual |
 | **C** · Costo | mm USD | Tal como se ingresa; **separado del valor** | Período de implementación |
+| **I** · Intangible | Texto libre | **No se monetiza**: nunca se suma al valor | – |
 
 {{reserve_table}}
 
@@ -92,12 +93,13 @@ El **tiempo ahorrado** se valora al salario promedio ({{avg_salary_usd_year}} US
 * Monetario: estimación directa; eventos × ahorro por evento; costo evitado × reducción de su probabilidad.
 * Tiempo ahorrado: estimación directa; usuarios × horas por semana × semanas; tareas × minutos ahorrados.
 * Costo: capex + opex del período; esfuerzo en personas-mes × tarifa + licencias.
+* Intangible: descripción libre de un beneficio sin valor monetario que merece quedar registrado, p. ej. cultura de seguridad, reputación, retención de conocimiento.
 
 Cada línea guarda sus parámetros, la fórmula legible y un comentario. Ejemplo: *10 reparaciones (workovers) al año, cada una de 30 BOPD, con la tasa de éxito aumentada del 60% al 70%*:
 
 `10 trabajos × 30 BOPD × (70% − 60%) = {{example_workover_bopd}} BOPD → {{example_workover_mm}} mm USD`
 
-El **valor 4MC** es P + R + M + T (métricas anuales más reservas de única vez). El costo se muestra al lado, con la relación valor/costo. Una valoración con solo líneas de costo no completa el paso: se necesita al menos una métrica de valor.
+El **valor 4MC** es P + R + M + T (métricas anuales más reservas de única vez). El costo se muestra al lado, con la relación valor/costo. Las líneas intangibles no suman valor; se envían al validador junto con el resto del 4MC. Una valoración con solo líneas de costo no completa el paso: se necesita al menos una línea de valor o intangible.
 
 Una vez enviadas a validación, las líneas quedan bloqueadas para el responsable. Se desbloquean si el validador solicita cambios. Un superusuario siempre puede editarlas.
 
@@ -170,6 +172,7 @@ Responsables y validadores son usuarios de Posit Connect. Los superusuarios se i
 
 ## Indicadores y mejora continua
 
+* **Embudo de evaluación** (Portfolio): cuántas iniciativas están registradas; requieren solo RICE; requieren valoración 4MC (pendiente, pendiente de validación, validada); requieren revisión experta (pendiente, aprobada); y están entregadas (auditoría pendiente, auditadas).
 * **Valor en cartera, evaluado, entregado y realizado** (mm USD) y **valor/costo** de las iniciativas evaluadas y entregadas.
 * **Tasa de realización**: valor auditado ÷ valor ex-ante. Mide la precisión de las estimaciones.
 * **Adopción**: adopción promedio de las iniciativas auditadas.

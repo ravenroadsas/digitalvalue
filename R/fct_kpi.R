@@ -124,3 +124,38 @@ m4_lifecycle <- function(lines, review = NULL, audit = NULL, cfg) {
              estimate_mm_usd = e$value_mm_usd, review_mm_usd = r$mm, actual_mm_usd = a$mm,
              realization_pct = realization_pct(a$mm, ref), stringsAsFactors = FALSE)
 }
+
+#' Evaluation funnel: where the initiatives are in the evaluation path
+#'
+#' Each initiative is counted in every stage it goes through:
+#'
+#' * `registered`: all initiatives;
+#' * `rice_only`: below both gates, the RICE is the whole evaluation;
+#' * `m4`: a 4MC valuation is required; parts `pending` (to record or to send,
+#'   including changes requested), `in_validation` (sent, waiting for the
+#'   validator) and `complete` (validated);
+#' * `review`: an expert review is required; parts `pending` and `approved`;
+#' * `post_delivery`: delivered initiatives; parts `awaiting_audit` and `audited`.
+#' @param pf Output of [compute_portfolio()].
+#' @return List of stages, each a list `id`, `label`, `n` and `parts` (named
+#'   integer vector, `NULL` when the stage has no breakdown).
+#' @export
+evaluation_funnel <- function(pf) {
+  n <- function(x) sum(x, na.rm = TRUE)
+  vs <- ifelse(is.na(pf$validation_status), "", pf$validation_status)
+  approved <- !is.na(pf$review_decision) & pf$review_decision == "Approve"
+  m4 <- pf$req_valuation
+  rv <- pf$req_review
+  post <- pf$status %in% status_decision
+  list(
+    list(id = "registered", label = "Registered", n = nrow(pf), parts = NULL),
+    list(id = "rice_only", label = "RICE only", n = n(!m4 & !rv), parts = NULL),
+    list(id = "m4", label = "4MC valuation", n = n(m4),
+         parts = c(pending = n(m4 & !pf$validated & vs != "pending"),
+                   in_validation = n(m4 & vs == "pending"),
+                   complete = n(m4 & pf$validated))),
+    list(id = "review", label = "Expert review", n = n(rv),
+         parts = c(pending = n(rv & !approved), approved = n(rv & approved))),
+    list(id = "post_delivery", label = "Post-delivery audit", n = n(post),
+         parts = c(awaiting_audit = n(pf$status == "Delivered"), audited = n(pf$status == "Audited"))))
+}

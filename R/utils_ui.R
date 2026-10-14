@@ -97,3 +97,41 @@ dt_compact <- function(df, ..., page_length = 10, selection = "single", escape =
   DT::datatable(df, rownames = FALSE, selection = selection, escape = escape,
                 class = "compact stripe hover", options = opts)
 }
+
+#' Evaluation funnel strip
+#'
+#' One cell per stage of [evaluation_funnel()]: count, a bar showing the share
+#' of registered initiatives (segmented by state) and the breakdown.
+#' @param stages Output of [evaluation_funnel()].
+#' @return A tag.
+#' @export
+funnel_ui <- function(stages) {
+  total <- max(1, stages[[1]]$n)
+  part_labels <- c(pending = "pending", in_validation = "pending validation", complete = "validated",
+                   approved = "approved", awaiting_audit = "awaiting audit", audited = "audited")
+  part_class <- c(pending = "todo", in_validation = "wait", complete = "done", approved = "done",
+                  awaiting_audit = "wait", audited = "done")
+  cell <- function(st) {
+    parts <- st$parts %||% c(all = st$n)
+    segs <- lapply(names(parts), function(k) {
+      if (parts[[k]] == 0) return(NULL)
+      htmltools::span(class = paste0("dv-funnel-seg dv-funnel-", part_class[k] %|na|% "all"),
+                      style = sprintf("width:%.1f%%", 100 * parts[[k]] / total),
+                      title = sprintf("%s: %d", part_labels[k] %|na|% st$label, parts[[k]]))
+    })
+    htmltools::div(class = "dv-funnel-stage", `data-stage` = st$id,
+      htmltools::div(class = "dv-kpi-label", st$label),
+      htmltools::div(class = "dv-funnel-n", st$n,
+        htmltools::span(class = "dv-funnel-pct",
+                        if (st$id != "registered") sprintf("%.0f%%", 100 * st$n / total))),
+      htmltools::div(class = "dv-funnel-bar", segs),
+      if (!is.null(st$parts)) htmltools::div(class = "dv-funnel-parts",
+        lapply(names(parts), function(k) htmltools::span(
+          htmltools::span(class = paste0("dv-funnel-key dv-funnel-", part_class[k])),
+          sprintf("%d %s", parts[[k]], part_labels[k])))))
+  }
+  htmltools::div(class = "dv-funnel", role = "list", `aria-label` = "Evaluation funnel",
+                 lapply(stages, cell))
+}
+
+`%|na|%` <- function(a, b) if (is.na(a)) b else a

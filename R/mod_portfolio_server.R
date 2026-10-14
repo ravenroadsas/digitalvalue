@@ -32,6 +32,9 @@ mod_portfolio_server <- function(id, state) {
         kpi_tile("Open alerts", k$n_alerts, "pending process actions"))
     })
 
+    # evaluation funnel: one cell per stage, bar = share of the registered initiatives
+    output$funnel <- shiny::renderUI(funnel_ui(evaluation_funnel(state$portfolio())))
+
     # validations waiting for the current user
     output$mine <- shiny::renderUI({
       state$version()

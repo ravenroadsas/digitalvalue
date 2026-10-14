@@ -58,3 +58,22 @@ test_that("mean adoption KPI over audited initiatives", {
   k <- portfolio_kpis(pf, db_get_status_history(con))
   expect_equal(k$mean_adoption_pct, mean(pf$adoption_pct[pf$status == "Audited"]))
 })
+
+test_that("evaluation funnel counts each stage and its breakdown", {
+  pf <- data.frame(
+    req_valuation = c(FALSE, TRUE, TRUE, TRUE, TRUE, FALSE),
+    req_review = c(FALSE, FALSE, TRUE, TRUE, FALSE, FALSE),
+    validated = c(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE),
+    validation_status = c(NA, "changes_requested", "pending", "validated", "validated", NA),
+    review_decision = c(NA, NA, NA, "Approve", NA, NA),
+    status = c("Evaluated", "Recorded", "Recorded", "Delivered", "Audited", "Recorded"))
+  f <- evaluation_funnel(pf)
+  n <- vapply(f, `[[`, 0, "n"); names(n) <- vapply(f, `[[`, "", "id")
+  expect_equal(unname(n), c(6, 2, 4, 2, 2))
+  expect_equal(f[[3]]$parts, c(pending = 1, in_validation = 1, complete = 2))
+  expect_equal(f[[4]]$parts, c(pending = 1, approved = 1))
+  expect_equal(f[[5]]$parts, c(awaiting_audit = 1, audited = 1))
+  html <- as.character(funnel_ui(f))
+  expect_match(html, "Post-delivery audit")
+  expect_match(html, "1 pending validation")
+})

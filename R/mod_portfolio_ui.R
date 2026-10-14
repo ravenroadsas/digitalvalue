@@ -5,6 +5,7 @@ mod_portfolio_ui <- function(id) {
   ns <- shiny::NS(id)
   htmltools::tagList(
     shiny::uiOutput(ns("kpis")),
+    shiny::uiOutput(ns("funnel")),
     shiny::uiOutput(ns("mine")),
     shiny::uiOutput(ns("gaps")),
     htmltools::div(class = "dv-toolbar",

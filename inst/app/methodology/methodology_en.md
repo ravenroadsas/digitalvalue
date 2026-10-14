@@ -38,7 +38,7 @@ This app evaluates and tracks value. It does **not** approve or reject the execu
 
 ## 1 · Registration & RICE
 
-The initiative is registered with a name, a brief description, the **owner** (searched in the Posit Connect user directory), the business unit and planned dates. The **RICE inputs are recorded in the same form**. Cost is not entered here: it is part of the 4MC valuation (metric C).
+The initiative is registered with a name, a brief description, the **owner** (searched in the Posit Connect user directory), the business unit and the planned start date. The **RICE inputs are recorded in the same form**. Cost is not entered here: it is part of the 4MC valuation (metric C).
 
 **RICE** is a qualitative score used to compare and rank initiatives:
 
@@ -71,7 +71,7 @@ An initiative stays **Recorded** until every required step is complete; it then 
 
 ## 2 · 4MC valuation
 
-The **owner** (or a superuser) quantifies the initiative with five metrics:
+The **owner** (or a superuser) quantifies the initiative with five metrics, plus intangible benefits recorded as text:
 
 | Metric | Unit | Converted to mm USD by | Horizon |
 |---|---|---|---|
@@ -80,6 +80,7 @@ The **owner** (or a superuser) quantifies the initiative with five metrics:
 | **M** · Monetary | mm USD per year | As entered | Annual |
 | **T** · Time saved | khours per year | khours × 1,000 × {{time_value_usd_h}} USD/h | Annual |
 | **C** · Cost | mm USD | As entered; **kept separate from value** | Implementation period |
+| **I** · Intangible | Free text | **Not monetised**: never added to value | – |
 
 {{reserve_table}}
 
@@ -92,12 +93,13 @@ The **owner** (or a superuser) quantifies the initiative with five metrics:
 * Monetary: direct estimate; events × saving per event; avoided cost × reduction of its probability.
 * Time saved: direct estimate; users × hours per week × weeks; tasks × minutes saved.
 * Cost: capex + opex over the period; effort in person-months × rate + licences.
+* Intangible: a free-text description of a benefit that has no monetary value but deserves to be recorded, e.g. safety culture, reputation, knowledge retention.
 
 Every line stores its parameters, the human-readable formula and a comment. Example: *10 workovers per year, each producing 30 BOPD, with the success rate increased from 60% to 70%*:
 
 `10 jobs × 30 BOPD × (70% − 60%) = {{example_workover_bopd}} BOPD → {{example_workover_mm}} mm USD`
 
-The **4MC value** is P + R + M + T (annual metrics plus one-off reserves). Cost is shown next to it, with the value/cost ratio. A valuation with cost lines only does not complete the step: at least one value metric is needed.
+The **4MC value** is P + R + M + T (annual metrics plus one-off reserves). Cost is shown next to it, with the value/cost ratio. Intangible lines add nothing to the value; they are sent to the validator with the rest of the 4MC. A valuation with cost lines only does not complete the step: at least one value or intangible line is needed.
 
 Once sent for validation, the lines are locked for the owner. They are unlocked again if the validator requests changes. A superuser can always edit them.
 
@@ -170,6 +172,7 @@ Owners and validators are Posit Connect users. Superusers are identified by thei
 
 ## KPIs and continuous improvement
 
+* **Evaluation funnel** (Portfolio): how many initiatives are registered; need only RICE; need a 4MC valuation (pending, pending validation, validated); need an expert review (pending, approved); and are delivered (awaiting audit, audited).
 * **Pipeline, evaluated, delivered and realised value** (mm USD) and **value/cost** of the evaluated and delivered initiatives.
 * **Realisation rate**: audited value ÷ ex-ante value. Measures the accuracy of the estimates.
 * **Adoption**: mean adoption of the audited initiatives.

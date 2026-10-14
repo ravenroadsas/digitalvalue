@@ -47,9 +47,18 @@ mod_valuation_server <- function(id, state) {
     })
 
     shiny::observeEvent(input$metric, {
-      shiny::updateSelectInput(session, "method", choices = m4_method_choices(input$metric, cfg))
+      shiny::updateSelectInput(session, "method", choices = if (input$metric == "I")
+        c("Free-text description (no monetary value)" = "intangible")
+        else m4_method_choices(input$metric, cfg))
+      shiny::updateTextAreaInput(session, "comment", placeholder = if (input$metric == "I")
+        "Describe the intangible benefit (required), e.g. better safety culture, knowledge retention"
+        else "e.g. 10 workovers producing each 30 BOPD, success rate from 60% to 70%")
     })
+    intangible <- shiny::reactive(identical(input$metric, "I") && identical(input$method, "intangible"))
     output$params <- shiny::renderUI({
+      if (intangible()) return(htmltools::div(class = "dv-muted", style = "margin-bottom:6px",
+        "Intangible benefits are recorded as text in the comment below. They add no monetary value ",
+        "but are sent to the validator with the rest of the 4MC."))
       shiny::req(input$method %in% names(methods))
       m <- methods[[input$method]]
       inputs <- lapply(m$params, function(p) {
@@ -61,6 +70,7 @@ mod_valuation_server <- function(id, state) {
       do.call(bslib::layout_columns, c(list(col_widths = rep(6, length(inputs))), inputs))
     })
     calc <- shiny::reactive({
+      if (intangible()) return(tryCatch(m4_intangible(input$comment), error = function(e) e))
       shiny::req(input$method %in% names(methods))
       m <- methods[[input$method]]
       p <- lapply(m$params, function(s) input[[paste0("p_", s$name)]])
@@ -69,6 +79,7 @@ mod_valuation_server <- function(id, state) {
     })
     output$calc_preview <- shiny::renderUI({
       c <- calc()
+      if (intangible()) return(NULL)
       if (inherits(c, "error")) return(callout(conditionMessage(c), type = "high"))
       htmltools::div(class = "dv-formula", c$formula_text)
     })
@@ -88,11 +99,12 @@ mod_valuation_server <- function(id, state) {
       }
       value <- sum(s$value_mm_usd[s$metric %in% m4_value_metrics])
       cost <- s$value[s$metric == "C"]
-      htmltools::div(class = "dv-kpis",
+      htmltools::div(class = "dv-kpis dv-kpis-4mc",
         tile("P", 0), tile("R", 3), tile("M", 2), tile("T", 1),
         kpi_tile("C \u00b7 Cost", fmt_num(cost, 2, " mm USD"),
                  sprintf("%d line(s) \u00b7 value/cost %s", s$n_lines[s$metric == "C"],
                          fmt_num(if (cost > 0 && value > 0) value / cost else NA, 1, "x"))),
+        kpi_tile("I \u00b7 Intangible", sprintf("%d note(s)", sum(lines()$metric == "I")), "recorded, not monetised"),
         kpi_tile("4MC value", fmt_num(value, 2, " mm USD"), "P, M, T annual \u00b7 R one-off", "strong"))
     })
 
@@ -107,15 +119,16 @@ mod_valuation_server <- function(id, state) {
 
     output$params_note <- shiny::renderUI({
       p <- cfg$params
-      sprintf("Conversion: P \u00d7 %s d \u00d7 %s USD/bbl \u00b7 R \u00d7 value per bbl of the category \u00b7 T \u00d7 %s USD/h (salary \u00d7 %s) \u00b7 C = cost in mm USD, kept separate from value.",
+      sprintf("Conversion: P \u00d7 %s d \u00d7 %s USD/bbl \u00b7 R \u00d7 value per bbl of the category \u00b7 T \u00d7 %s USD/h (salary \u00d7 %s) \u00b7 C = cost in mm USD, kept separate from value \u00b7 I = intangible, text only.",
               p$days_per_year, p$netback_usd_bbl, fmt_num(time_value_usd_hour(cfg), 0),
               p$time_productivity_coef)
     })
 
     shiny::observeEvent(input$add, {
       c <- calc(); id <- state$selected()
-      if (is.null(id) || inherits(c, "error") || !editable()) return()
-      db_add_m4_line(state$con, id, c, if (nzchar(input$comment %||% "")) input$comment else NA,
+      if (is.null(id) || !editable()) return()
+      if (inherits(c, "error")) return(shiny::showNotification(conditionMessage(c), type = "error"))
+      db_add_m4_line(state$con, id, c, if (nzchar(trimws(input$comment %||% ""))) trimws(input$comment) else NA,
                      state$user$user)
       shiny::updateTextAreaInput(session, "comment", value = "")
       state$refresh()
